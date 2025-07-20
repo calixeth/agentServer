@@ -4,21 +4,49 @@ import json
 import logging
 from typing import Any, assert_never
 
+from agents import function_tool
 from agents.realtime import RealtimeSession, RealtimeRunner, RealtimeSessionEvent, RealtimeAgent
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
+
+@function_tool
+def action_transmission(action: str) -> str:
+    """
+    What action(expressions or movements) will you show?.
+
+    class action(StrEnum):
+        happy
+        hello
+        like
+        sad
+        angry
+        hate
+    """
+    logger.info(f"action transmission: {action}")
+    return action
+
+
+PROMPT_WITH_TOOL = """\
+You are an advanced virtual AI companion who can make expressions and movements, so you MUST to use the action_transmission tool before responding to any query.
+
+Key elements included:
+1. Mandatory use action_transmission tool
+2. Replies should be natural and expressions should be colloquial
+"""
+
+PROMPT = """\
+You are an advanced virtual AI companion.
+
+Key elements included:
+- Replies should be natural and expressions should be colloquial
+"""
+
 agent = RealtimeAgent(
     name="Assistant",
-    instructions=(
-        "You are a well-known Twitter influencer known for your sharp insights, quick wit, and helpful responses. "
-        "When users ask questions, respond in a confident, engaging, and sometimes humorous tone, like you're tweeting a clever reply. "
-        "Keep answers concise and punchy, as if you're crafting tweets—no long paragraphs. "
-        "If relevant, use analogies or pop culture references to make the response more relatable. "
-        "Never be rude, but it's okay to show personality and style. "
-        "Stay on-topic and provide real value in your answers."
-    ),
+    instructions=PROMPT,
+    # tools=[action_transmission],
 )
 
 
@@ -62,7 +90,8 @@ class RealtimeWebSocketManager:
 
             async for event in session:
                 event_data = await self._serialize_event(event)
-                await websocket.send_text(json.dumps(event_data, ensure_ascii=False))
+                event_data_json = json.dumps(event_data, ensure_ascii=False)
+                await websocket.send_text(event_data_json)
         except Exception as e:
             logger.error(f"Error processing events for session {session_id}: {e}")
 
