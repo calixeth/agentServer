@@ -1,6 +1,6 @@
 # agentServer
 
-[![Watch the demo](https://deepweb3.s3.ap-southeast-2.amazonaws.com/5b9ec5ae407468574c9eef109f7b540c.mp4)
+[Watch the demo](https://deepweb3.s3.ap-southeast-2.amazonaws.com/5b9ec5ae407468574c9eef109f7b540c.mp4)
 
 
 ## 🚀 Quickstart
