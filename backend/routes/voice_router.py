@@ -16,8 +16,11 @@ manager = RealtimeWebSocketManager()
 
 @router.websocket("/api/voice/chat/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
-    logger.info(f"new session: {session_id}")
-    await manager.connect(websocket, session_id)
+    voice: str = websocket.query_params.get("voice")
+    if not voice:
+        voice = "coral"
+    logger.info(f"new session: {session_id} voice: {voice}")
+    await manager.connect(websocket, session_id, voice)
     try:
         while True:
             data = await websocket.receive_text()

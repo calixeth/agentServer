@@ -5,7 +5,8 @@ import logging
 from typing import Any, assert_never
 
 from agents import function_tool
-from agents.realtime import RealtimeSession, RealtimeRunner, RealtimeSessionEvent, RealtimeAgent
+from agents.realtime import RealtimeSession, RealtimeRunner, RealtimeSessionEvent, RealtimeAgent, RealtimeRunConfig, \
+    RealtimeSessionModelSettings, RealtimeModelConfig
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
@@ -57,12 +58,19 @@ class RealtimeWebSocketManager:
         self.session_contexts: dict[str, Any] = {}
         self.websockets: dict[str, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket, session_id: str):
+    async def connect(self, websocket: WebSocket, session_id: str, voice: str):
         await websocket.accept()
         self.websockets[session_id] = websocket
 
-        runner = RealtimeRunner(agent)
-        session_context = await runner.run()
+        runner = RealtimeRunner(
+            starting_agent=agent,
+            config=RealtimeRunConfig(model_settings=RealtimeSessionModelSettings(voice=voice)),
+        )
+        session_context = await runner.run(
+            model_config=RealtimeModelConfig(
+                initial_model_settings=RealtimeSessionModelSettings(voice=voice)
+            )
+        )
         session = await session_context.__aenter__()
         self.active_sessions[session_id] = session
         self.session_contexts[session_id] = session_context
