@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PORT: int = 8080
     WORKERS: int = 1
     OPENAI_API_KEY: str = "<KEY>"
+    PROMPT_KEY_ELEMENTS_APPEND: str = ""
 
 
 SETTINGS = Settings()

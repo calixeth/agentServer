@@ -9,6 +9,8 @@ from agents.realtime import RealtimeSession, RealtimeRunner, RealtimeSessionEven
     RealtimeSessionModelSettings, RealtimeModelConfig
 from fastapi import WebSocket
 
+from config import SETTINGS
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,11 +39,12 @@ Key elements included:
 2. Replies should be natural and expressions should be colloquial
 """
 
-PROMPT = """\
+PROMPT = f"""\
 You are an advanced virtual AI companion.
 
 Key elements included:
 - Replies should be natural and expressions should be colloquial
+{SETTINGS.PROMPT_KEY_ELEMENTS_APPEND}
 """
 
 agent = RealtimeAgent(
@@ -68,7 +71,9 @@ class RealtimeWebSocketManager:
         )
         session_context = await runner.run(
             model_config=RealtimeModelConfig(
-                initial_model_settings=RealtimeSessionModelSettings(voice=voice)
+                initial_model_settings=RealtimeSessionModelSettings(
+                    voice=voice,
+                )
             )
         )
         session = await session_context.__aenter__()
@@ -79,6 +84,7 @@ class RealtimeWebSocketManager:
         asyncio.create_task(self._process_events(session_id))
 
     async def disconnect(self, session_id: str):
+        logger.info(f"disconnect session: {session_id}")
         if session_id in self.session_contexts:
             await self.session_contexts[session_id].__aexit__(None, None, None)
             del self.session_contexts[session_id]
@@ -99,6 +105,7 @@ class RealtimeWebSocketManager:
             async for event in session:
                 event_data = await self._serialize_event(event)
                 event_data_json = json.dumps(event_data, ensure_ascii=False)
+                logger.info(f"event_data_json: {event_data_json}")
                 await websocket.send_text(event_data_json)
         except Exception as e:
             logger.error(f"Error processing events for session {session_id}: {e}")
