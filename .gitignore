@@ -1,3 +1,4 @@
-/backend/.env
+/.env
 /build_be.sh
 /script/
+/demo/

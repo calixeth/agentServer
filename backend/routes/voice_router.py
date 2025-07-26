@@ -5,7 +5,7 @@ import struct
 from fastapi import APIRouter
 from fastapi import WebSocket, WebSocketDisconnect
 
-from services.voice import RealtimeWebSocketManager
+from services.voice_service import RealtimeWebSocketManager
 
 logger = logging.getLogger(__name__)
 
