@@ -1,0 +1,16 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  custom:
+    format: "%(asctime)s [%(levelname)s] tid=%(otelTraceID)s %(filename)s.%(funcName)s:%(lineno)s - %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: custom
+    stream: ext://sys.stdout
+loggers:
+  uvicorn.access:
+    handlers: [ console ]
+    level: INFO
+    propagate: False
