@@ -94,6 +94,7 @@ class RealtimeWebSocketManager:
             del self.websockets[session_id]
 
     async def send_audio(self, session_id: str, audio_bytes: bytes):
+        logger.info(f"send audio session: {session_id}")
         if session_id in self.active_sessions:
             await self.active_sessions[session_id].send_audio(audio_bytes)
 
