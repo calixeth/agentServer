@@ -17,5 +17,6 @@ FROM base
 COPY --from=uv-builder /.venv /.venv
 
 COPY backend .
+COPY .env .
 
 CMD ["python3", "-m", "app"]

@@ -11,6 +11,10 @@ class TwitterBO(BaseModel):
     avatar_base64: str = ""
 
 
+class FileBO(BaseModel):
+    url: str
+
+
 class GenImgTaskBO(BaseModel):
     template_img_base64: str
     prompt: Optional[str] = ""
