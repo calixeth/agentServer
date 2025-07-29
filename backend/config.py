@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY = ""
     AWS_SECRET_KEY = ""
     OPENAI_IMAGE_API_KEY = ""
+    PROXY_OPENAI_API_KEY = ""
+    PROXY_OPENAI_BASE_URL = ""
 
 
 SETTINGS = Settings()
