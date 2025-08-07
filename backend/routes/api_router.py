@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File
 from starlette.responses import Response
 
 from common.response import RestResponse
-from data.file import s3_upload_file
+from infra.file import s3_upload_file
 from entities.bo import FileBO
 from entities.dto import GenCoverImgReq, GenCoverImgResp
 from services.aigc_service import gen_cover_img_svc

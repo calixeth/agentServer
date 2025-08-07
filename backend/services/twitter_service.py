@@ -1,8 +1,8 @@
 import logging
 
-from data.db import twitter_user_col
-from data.file import img_url_to_base64
-from data.twitter_client import twitter_fetch_user
+from infra.db import twitter_user_col
+from infra.file import img_url_to_base64
+from clients.twitter_client import twitter_fetch_user
 from entities.bo import TwitterBO
 
 
@@ -16,7 +16,7 @@ async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
     if not isinstance(user, dict):
         return None
 
-    data = user.get("result", {}).get("data", {}).get("user", {}).get("result", {})
+    data = user.get("result", {}).get("infra", {}).get("user", {}).get("result", {})
     if not data:
         return None
 

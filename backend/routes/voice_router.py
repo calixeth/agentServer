@@ -28,7 +28,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 
             if message["type"] == "audio":
                 # Convert int16 array to bytes
-                int16_data = message["data"]
+                int16_data = message["infra"]
                 audio_bytes = struct.pack(f"{len(int16_data)}h", *int16_data)
                 await manager.send_audio(session_id, audio_bytes)
 
