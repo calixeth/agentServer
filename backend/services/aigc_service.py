@@ -1,8 +1,8 @@
 import logging
 import uuid
 
+from agent.prompt.aigc import GEN_COVER_IMG_PROMPT
 from common.error import raise_error, raise_biz
-from common.temp_prompt import GEN_COVER_IMG_PROMPT
 from infra.db import aigc_task_col
 from infra.file import img_url_to_base64
 from clients.openai_gen_img import openai_gen_img_svc
