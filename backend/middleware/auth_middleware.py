@@ -10,17 +10,21 @@ from starlette.responses import JSONResponse
 from common.error_messages import get_error_message
 from common.exceptions import ErrorCode
 from common.response import RestResponse
+from config import SETTINGS
 from utils.jwt_utils import verify_token
 
 security = HTTPBearer()
 logger = logging.getLogger(__name__)
 
+
 class AuthConfig:
     """Authentication configuration"""
     PUBLIC_PREFIXES = ["/api/health"]
 
+
 class AuthResponse:
     """Authentication response helper"""
+
     @staticmethod
     def error(error_code: ErrorCode) -> JSONResponse:
         return JSONResponse(
@@ -31,9 +35,11 @@ class AuthResponse:
             ).model_dump(exclude_none=True)
         )
 
+
 class AuthError(Exception):
     def __init__(self, error_code: ErrorCode):
         self.error_code = error_code
+
 
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -64,7 +70,14 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                 raise AuthError(ErrorCode.TOKEN_MISSING)
 
             token = auth_header.split(" ")[1] if auth_header.startswith("Bearer ") else auth_header
-            payload = verify_token(token)
+            if SETTINGS.TEST_TOKEN and SETTINGS.TEST_TOKEN == token:
+                payload = {
+                    "username": "test",
+                    "wallet_address": "test",
+                    "tenant_id": "test",
+                }
+            else:
+                payload = verify_token(token)
             if not payload:
                 raise AuthError(ErrorCode.TOKEN_EXPIRED)
 
@@ -82,6 +95,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         except ValueError:
             return False
 
+
 async def get_current_user(request: Request) -> dict:
     """Get authenticated user from request"""
     user = getattr(request.state, "user", None)
@@ -91,6 +105,7 @@ async def get_current_user(request: Request) -> dict:
             detail=get_error_message(ErrorCode.UNAUTHORIZED)
         )
     return user
+
 
 async def get_optional_current_user(request: Request) -> Optional[dict]:
     """Get optional user from request"""
