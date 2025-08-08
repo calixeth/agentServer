@@ -3,3 +3,9 @@
 /script/
 /demo/
 /backend/common/temp_prompt.py
+/.idea/.gitignore
+/.idea/agentServer.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/vcs.xml

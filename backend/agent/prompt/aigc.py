@@ -1,0 +1,3 @@
+GEN_COVER_IMG_PROMPT="""\
+A stylish woman in a white V-neck top and gray zip-up jacket waves her arms energetically, leaning forward with an intense expression as she shouts "Come on, come on, you can do it" to an unseen audience, her gray curly hair bouncing with movement against the solid dark background, maintaining the modern cartoon illustration style with clean lines and vibrant colors, fixed camera angle.
+"""

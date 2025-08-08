@@ -3,7 +3,7 @@ import logging
 import aiohttp
 
 from config import SETTINGS
-from data.file import download_and_upload_image
+from infra.file import download_and_upload_image
 
 
 async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
