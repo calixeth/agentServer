@@ -12,7 +12,7 @@ from common.log import setup_logger
 from common.response import RestResponse
 from common.tracing import Otel
 from config import SETTINGS
-from routes import api_router, voice_router
+from routes import api_router, voice_router, auth_router
 
 Otel.init()
 setup_logger()
@@ -22,6 +22,7 @@ app = FastAPI()
 FastAPIInstrumentor.instrument_app(app)
 app.include_router(api_router.router)
 app.include_router(voice_router.router)
+app.include_router(auth_router.router)
 
 
 @app.exception_handler(Exception)
