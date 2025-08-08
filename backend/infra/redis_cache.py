@@ -228,7 +228,7 @@ class RedisUtils:
             return 0
 
 
-redis_utils = RedisUtils(
+REDIS = RedisUtils(
     host=SETTINGS.REDIS_HOST,
     port=SETTINGS.REDIS_PORT,
     db=SETTINGS.REDIS_DB,

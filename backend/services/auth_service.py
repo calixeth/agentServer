@@ -13,7 +13,7 @@ from entities.bo import LoginRequest, WalletLoginRequest
 from entities.dto import LoginResponse, NonceResponse, WalletLoginResponse, TokenResponse
 from entities.enums import ChainType
 from utils.jwt_utils import generate_token_pair, verify_refresh_token
-from utils.redis_utils import redis_utils
+from infra.redis_cache import REDIS
 from utils.web3_utils import generate_nonce, get_message_to_sign, verify_signature
 from infra.db import users_col
 
@@ -100,7 +100,7 @@ async def get_wallet_nonce(wallet_address: str) -> NonceResponse:
         "nonce": nonce,
         "created_at": datetime.utcnow().isoformat()
     }
-    redis_utils.set_value(
+    REDIS.set_value(
         get_nonce_key(wallet_address),
         json.dumps(nonce_data),
         ex=NONCE_EXPIRY_MINUTES * 60
@@ -151,7 +151,7 @@ async def wallet_login(request: WalletLoginRequest) -> WalletLoginResponse:
 
         # Get stored nonce data from Redis
         nonce_key = get_nonce_key(request.wallet_address)
-        stored_nonce_data = redis_utils.get_value(nonce_key)
+        stored_nonce_data = REDIS.get_value(nonce_key)
 
         if not stored_nonce_data:
             raise CustomAgentException(message="Nonce not found or expired. Please request a new one.")
@@ -168,7 +168,7 @@ async def wallet_login(request: WalletLoginRequest) -> WalletLoginResponse:
             raise CustomAgentException(message="Invalid signature")
 
         # Delete used nonce from Redis
-        redis_utils.delete_key(nonce_key)
+        REDIS.delete_key(nonce_key)
 
         # Get or create user with chain type
         user = await get_or_create_wallet_user(request.wallet_address, chain_type)
