@@ -15,7 +15,7 @@ from entities.enums import ChainType
 from utils.jwt_utils import generate_token_pair, verify_refresh_token
 from utils.redis_utils import redis_utils
 from utils.web3_utils import generate_nonce, get_message_to_sign, verify_signature
-from data.db import users_col
+from infra.db import users_col
 
 logger = logging.getLogger(__name__)
 
