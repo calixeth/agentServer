@@ -2,17 +2,21 @@ import base64
 import io
 import logging
 
+import aiohttp
 import openai
 
 from config import SETTINGS
 
 
-async def openai_gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
+async def openai_gen_img_svc(img_url: str, prompt: str) -> str | None:
     try:
-        b64_str = template_img_base64.split(",")[1]
-        image_bytes = base64.b64decode(b64_str)
-        image_file = io.BytesIO(image_bytes)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(img_url) as resp:
+                img_bytes = await resp.read()
+
+        image_file = io.BytesIO(img_bytes)
         image_file.name = "template.png"
+        logging.info(f"openai generating image: {img_url}")
 
         ret = await openai.AsyncClient(api_key=SETTINGS.PROXY_OPENAI_API_KEY,
                                        base_url=SETTINGS.PROXY_OPENAI_BASE_URL).images.edit(

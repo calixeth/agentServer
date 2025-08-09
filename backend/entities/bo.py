@@ -10,6 +10,7 @@ class TwitterBO(BaseModel):
     username: str
     data: dict
     avatar_url: str = ""
+    avatar_url_400x400: str = ""
     avatar_base64: str = ""
 
 

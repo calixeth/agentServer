@@ -1,4 +1,5 @@
 import logging
+import re
 
 from entities import bo
 from infra.db import twitter_user_col
@@ -32,11 +33,19 @@ async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
     return bo
 
 
+def convert_twitter_avatar_to_400(url: str) -> str:
+    return re.sub(r'_(normal|bigger|mini)\.(jpg|png|jpeg|gif)$', r'_400x400.\2', url)
+
+
 async def _fill(bo: TwitterBO) -> TwitterBO:
     changed = False
     if not bo.avatar_url:
         bo.avatar_url = bo.data.get("avatar").get("image_url")
         changed = True
+    if not bo.avatar_url_400x400:
+        if bo.avatar_url:
+            bo.avatar_url_400x400 = convert_twitter_avatar_to_400(bo.avatar_url)
+            changed = True
 
     # if not bo.avatar_base64:
     #     bo.avatar_base64 = await img_url_to_base64(bo.avatar_url)

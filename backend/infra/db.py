@@ -1,6 +1,9 @@
+import asyncio
+
 import motor.motor_asyncio
 
 from config import SETTINGS
+from entities.dto import AIGCTask
 
 client = motor.motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO_STR)
 db = client[SETTINGS.MONGO_DB]
@@ -8,6 +11,18 @@ twitter_user_col = db["twitter_user"]
 file_col = db["file"]
 aigc_task_col = db["aigc_task"]
 users_col = db["users"]  # Collection for user authentication data
+
+
+async def aigc_task_get_by_id(task_id: str) -> AIGCTask | None:
+    ret = await aigc_task_col.find_one({"task_id": task_id})
+    if ret:
+        return AIGCTask(**ret)
+    else:
+        return None
+
+
+async def aigc_task_save(task: AIGCTask):
+    await aigc_task_col.replace_one({"task_id": task.task_id}, task.model_dump(), upsert=True)
 
 
 async def create_user_indexes():
