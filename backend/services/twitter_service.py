@@ -1,5 +1,6 @@
 import logging
 
+from entities import bo
 from infra.db import twitter_user_col
 from infra.file import img_url_to_base64
 from clients.twitter_client import twitter_fetch_user
@@ -14,9 +15,10 @@ async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
 
     user = await twitter_fetch_user(username)
     if not isinstance(user, dict):
+        logging.info(f"User {username} not found")
         return None
 
-    data = user.get("result", {}).get("infra", {}).get("user", {}).get("result", {})
+    data = user.get("result", {}).get("data", {}).get("user", {}).get("result", {})
     if not data:
         return None
 
@@ -26,7 +28,6 @@ async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
         data=data,
     )
     bo = await _fill(bo)
-    await twitter_user_col.replace_one({"id": data["id"]}, bo.model_dump(), upsert=True)
 
     return bo
 
@@ -37,12 +38,14 @@ async def _fill(bo: TwitterBO) -> TwitterBO:
         bo.avatar_url = bo.data.get("avatar").get("image_url")
         changed = True
 
-    if not bo.avatar_base64:
-        bo.avatar_base64 = await img_url_to_base64(bo.avatar_url)
-        changed = True
+    # if not bo.avatar_base64:
+    #     bo.avatar_base64 = await img_url_to_base64(bo.avatar_url)
+    #     changed = True
 
     if changed:
         await _save(bo)
+
+    logging.info(f"TwitterBO {bo.model_dump_json()}")
     return bo
 
 

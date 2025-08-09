@@ -20,7 +20,7 @@ async def img_url_to_base64(image_url):
             response.raise_for_status()
             content = await response.read()
             encoded_data = base64.b64encode(content).decode("utf-8")
-            return "infra:image/png;base64," + encoded_data
+            return "data:image/png;base64," + encoded_data
 
 
 async def download_and_upload_image(url):

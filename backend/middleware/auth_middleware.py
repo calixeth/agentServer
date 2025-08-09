@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class AuthConfig:
     """Authentication configuration"""
-    PUBLIC_PREFIXES = ["/api/health"]
+    PUBLIC_PREFIXES = ["/api/health", "/openapi.json"]
 
 
 class AuthResponse:
@@ -58,9 +58,6 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except AuthError as e:
             return AuthResponse.error(e.error_code)
-        except Exception as e:
-            logger.error("Authentication error", exc_info=True)
-            return AuthResponse.error(ErrorCode.TOKEN_INVALID)
 
     async def _authenticate_jwt(self, request: Request):
         """Authenticate using JWT token"""

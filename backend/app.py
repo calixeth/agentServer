@@ -7,6 +7,7 @@ from agents import set_default_openai_key
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from starlette.responses import JSONResponse
 
 from common.log import setup_logger
 from common.response import RestResponse
@@ -25,6 +26,14 @@ app.add_middleware(JWTAuthMiddleware)
 app.include_router(api_router.router)
 app.include_router(voice_router.router)
 app.include_router(auth_router.router)
+
+
+@app.get("/openapi.json", include_in_schema=False)
+def custom_openapi():
+    """
+    http://127.0.0.1:8080/openapi.json
+    """
+    return JSONResponse(content=app.openapi())
 
 
 @app.exception_handler(Exception)
