@@ -1,5 +1,6 @@
 /.env
 /build_be.sh
+/Dockerfile-be-aws
 /script/
 /demo/
 /backend/common/temp_prompt.py
