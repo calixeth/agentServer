@@ -17,7 +17,7 @@ class SubTask(BaseModel):
     status: TaskStatus = Field(description="status", default=TaskStatus.IN_PROGRESS)
     created_at: datetime.datetime = Field(description="created_at")
     done_at: datetime.datetime | None = Field(description="done_at", default=None)
-    history: list[dict[str, Any]] = Field(description="history", default=[])
+    history: list[dict[str, Any]] = Field(description="history", default_factory=list)
 
     def regenerate(self) -> None:
         if self.status == TaskStatus.DONE:
