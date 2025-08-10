@@ -6,8 +6,9 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from starlette.responses import Response, JSONResponse
 
+from common.error import raise_error
 from common.response import RestResponse
-from infra.db import aigc_task_col
+from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id
 from infra.file import s3_upload_file
 from entities.bo import FileBO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskQuery
@@ -62,6 +63,10 @@ async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
              response_model=RestResponse[AIGCTask]
              )
 async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    count = await aigc_task_count_by_tenant_id(tenant_id)
+    if count > 1:
+        raise_error("Too many tasks")
     task = AIGCTask(
         task_id=str(uuid.uuid4()),
         tenant_id=user.get("tenant_id", ""),
@@ -76,8 +81,8 @@ async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_u
              response_model=RestResponse[AIGCTask]
              )
 async def get_aigc_task(req: AIGCTaskQuery):
-    data = await aigc_task_col.find_one({"task_id": str(req.task_id)})
-    return RestResponse(data=AIGCTask(**data))
+    task = aigc_task_get_by_id(req.task_id)
+    return RestResponse(data=task)
 
 
 @router.post("/api/aigc_task/list",

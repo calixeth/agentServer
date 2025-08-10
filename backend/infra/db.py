@@ -21,6 +21,10 @@ async def aigc_task_get_by_id(task_id: str) -> AIGCTask | None:
         return None
 
 
+async def aigc_task_count_by_tenant_id(tenant_id: str) -> int:
+    return await aigc_task_col.count_documents({"tenant_id": tenant_id})
+
+
 async def aigc_task_save(task: AIGCTask):
     await aigc_task_col.replace_one({"task_id": task.task_id}, task.model_dump(), upsert=True)
 
