@@ -37,20 +37,45 @@ class GenCoverImgReq(BaseModel):
     img_url: str = Field(default="", description="manually specify cover img")
 
 
+class AIGCTaskQuery(BaseModel):
+    task_id: str = Field(description="task_id")
+
+
 class Cover(SubTask):
     input: GenCoverImgReq
     output: str | None = Field(description="cover img url", default=None)
 
 
-class AIGCTaskQuery(BaseModel):
+class VideoKeyType(StrEnum):
+    HAPPY = "happy"
+    SAD = "sad"
+    HELLO = "hello"
+    DANCE = "dance"
+
+
+class GenVideoReq(BaseModel):
     task_id: str = Field(description="task_id")
+    key: VideoKeyType = Field(description="Unique key")
+    # scenario: str = Field(description="Scenario Description")
+
+
+class GenVideoResp(BaseModel):
+    out_id: str = Field(description="out_id")
+    view_url: str = Field(description="view url")
+    download_url: str = Field(description="download url")
+
+
+class Video(SubTask):
+    input: GenVideoReq
+    output: GenVideoResp | None = Field(description="video url", default=None)
 
 
 class AIGCTask(BaseModel):
     task_id: str = Field(description="task_id")
     tenant_id: str = Field(description="tenant_id")
-    cover: Cover | None = Field(description="cover", default=None)
     created_at: datetime.datetime = Field(description="created_at")
+    cover: Cover | None = Field(description="cover", default=None)
+    videos: list[Video] = Field(description="videos", default_factory=list)
 
 
 class LoginResponse(BaseModel):

@@ -11,9 +11,9 @@ from common.response import RestResponse
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id
 from infra.file import s3_upload_file
 from entities.bo import FileBO
-from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskQuery
+from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskQuery, GenVideoReq
 from middleware.auth_middleware import get_optional_current_user
-from services.aigc_service import gen_cover_img_svc
+from services.aigc_service import gen_cover_img_svc, gen_video_svc
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,16 @@ async def upload_file(
 async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
     logging.info(f"gen_cover_img req: {req.model_dump_json()}")
     ret = await gen_cover_img_svc(req, background_tasks)
+    return RestResponse(data=ret)
+
+
+@router.post("/api/aigc_task/gen_scenario_video",
+             summary="aigc_task/gen_scenario_video",
+             response_model=RestResponse[AIGCTask]
+             )
+async def gen_scenario_video(req: GenVideoReq, background_tasks: BackgroundTasks):
+    logging.info(f"gen_scenario_video req: {req.model_dump_json()}")
+    ret = await gen_video_svc(req, background_tasks)
     return RestResponse(data=ret)
 
 
