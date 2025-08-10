@@ -91,7 +91,7 @@ async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_u
              response_model=RestResponse[AIGCTask]
              )
 async def get_aigc_task(req: AIGCTaskQuery):
-    task = aigc_task_get_by_id(req.task_id)
+    task = await aigc_task_get_by_id(req.task_id)
     return RestResponse(data=task)
 
 
