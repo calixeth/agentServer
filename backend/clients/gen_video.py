@@ -49,26 +49,36 @@ async def veo3_gen_video_svc(img_url: str, prompt: str) -> GenVideoResp | None:
                 if resp.status == 200:
                     async for chunk in resp.content:
                         if chunk:
-                            text = chunk.decode("utf-8").strip()
+                            text = chunk.decode("utf-8", errors="ignore").strip()
                             logging.info(f"veo3_gen_video_chunk {text}")
 
-                            if text.startswith("data: "):
-                                json_str = text[len("data: "):]
+                            for line in text.splitlines():
+                                line = line.strip()
+                                if not line.startswith("data: "):
+                                    continue
+                                if line == "data: [DONE]":
+                                    continue
+
+                            json_str = line[len("data: "):].strip()
+                            try:
                                 obj = json.loads(json_str)
-                                content = obj["choices"][0]["delta"].get("content", "")
-                                if "Task ID:" in content:
-                                    m = task_id_pattern.search(content)
-                                    if m:
-                                        data["task_id"] = m.group(1)
-                                        logging.info(f"Task ID: {data['task_id']}")
-                                if "Watch Online" in content or "Download Video" in content:
-                                    wm = watch_pattern.search(content)
-                                    dm = download_pattern.search(content)
-                                    if wm:
-                                        data["watch_url"] = wm.group(1)
-                                    if dm:
-                                        data["download_url"] = dm.group(1)
-                                    success = True
+                            except json.JSONDecodeError:
+                                logging.warning(f"Not valid JSON: {json_str}")
+                                continue
+
+                            content = obj["choices"][0]["delta"].get("content", "")
+
+                            m = task_id_pattern.search(content)
+                            if m:
+                                data["task_id"] = m.group(1)
+
+                            wm = watch_pattern.search(content)
+                            dm = download_pattern.search(content)
+                            if wm:
+                                data["watch_url"] = wm.group(1)
+                            if dm:
+                                data["download_url"] = dm.group(1)
+                                success = True
                 else:
                     logging.error(f"Request failed with status {resp.status}")
         if success:
