@@ -30,13 +30,17 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
     #     img_base64 = await img_url_to_base64(req.img_url)
 
     task = await aigc_task_get_by_id(req.task_id)
-    task.cover = Cover(
-        sub_task_id=str(uuid.uuid4()),
-        input=req,
-        output=None,
-        created_at=datetime.datetime.now()
-
-    )
+    if task.cover:
+        task.cover.regenerate()
+        task.cover.input = req
+        task.cover.output = None
+    else:
+        task.cover = Cover(
+            sub_task_id=str(uuid.uuid4()),
+            input=req,
+            output=None,
+            created_at=datetime.datetime.now()
+        )
     await aigc_task_col.replace_one({"task_id": task.task_id}, task.model_dump(), upsert=True)
 
     background.add_task(_task_gen_cover_img_svc, task, twitter_bo)
@@ -55,6 +59,7 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
         if url:
             cur_task.cover.output = url
             cur_task.cover.status = TaskStatus.DONE
+            cur_task.cover.done_at = datetime.datetime.now()
             await aigc_task_save(cur_task)
             return
 

@@ -1,5 +1,7 @@
 import datetime
+import uuid
 from enum import Enum, StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +17,18 @@ class SubTask(BaseModel):
     status: TaskStatus = Field(description="status", default=TaskStatus.IN_PROGRESS)
     created_at: datetime.datetime = Field(description="created_at")
     done_at: datetime.datetime | None = Field(description="done_at", default=None)
+    history: list[dict[str, Any]] = Field(description="history", default=[])
+
+    def regenerate(self) -> None:
+        if self.status == TaskStatus.DONE:
+            current_dict = self.model_dump()
+            current_dict.pop("history", None)
+            self.history.insert(0, current_dict)
+
+        self.status = TaskStatus.IN_PROGRESS
+        self.created_at = datetime.datetime.now()
+        self.done_at = None
+        self.sub_task_id = str(uuid.uuid4())
 
 
 class GenCoverImgReq(BaseModel):
