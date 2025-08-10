@@ -33,6 +33,7 @@ class AIGCTaskQuery(BaseModel):
 
 class AIGCTask(BaseModel):
     task_id: str = Field(description="task_id")
+    tenant_id: str = Field(description="tenant_id")
     cover: Cover | None = Field(description="cover", default=None)
     created_at: datetime.datetime = Field(description="created_at")
 

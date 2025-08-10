@@ -1,8 +1,9 @@
 import datetime
 import logging
 import uuid
+from typing import Optional
 
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from starlette.responses import Response, JSONResponse
 
 from common.response import RestResponse
@@ -10,6 +11,7 @@ from infra.db import aigc_task_col
 from infra.file import s3_upload_file
 from entities.bo import FileBO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskQuery
+from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc
 
 logger = logging.getLogger(__name__)
@@ -59,19 +61,39 @@ async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
              summary="aigc_task/create",
              response_model=RestResponse[AIGCTask]
              )
-async def create_aigc_task():
+async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_user), ):
     task = AIGCTask(
         task_id=str(uuid.uuid4()),
+        tenant_id=user.get("tenant_id", ""),
         created_at=datetime.datetime.now()
     )
     await aigc_task_col.insert_one(task.model_dump())
     return RestResponse(data=task)
 
 
-@router.post("/api/aigc_task/find",
-             summary="aigc_task/find",
+@router.post("/api/aigc_task/get",
+             summary="aigc_task/get",
              response_model=RestResponse[AIGCTask]
              )
-async def find_aigc_task(req: AIGCTaskQuery):
+async def get_aigc_task(req: AIGCTaskQuery):
     data = await aigc_task_col.find_one({"task_id": str(req.task_id)})
     return RestResponse(data=AIGCTask(**data))
+
+
+@router.post("/api/aigc_task/list",
+             summary="aigc_task/list",
+             response_model=RestResponse[list[AIGCTask]]
+             )
+async def list_aigc_task(
+        page: int = Query(1, ge=1),
+        pagesize: int = Query(10, ge=1, le=1000),
+        user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    skip = (page - 1) * pagesize
+    cursor = aigc_task_col.find({"tenant_id": tenant_id}) \
+        .sort("created_at", -1) \
+        .skip(skip) \
+        .limit(pagesize)
+    data_list = await cursor.to_list(length=pagesize)
+    tasks = [AIGCTask(**doc) for doc in data_list]
+    return RestResponse(data=tasks)
