@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class AuthConfig:
     """Authentication configuration"""
-    PUBLIC_PREFIXES = ["/api/health", "/openapi.json"]
+    PUBLIC_PREFIXES = ["/api/health", "/openapi.json", "/api/auth"]
 
 
 class AuthResponse:
