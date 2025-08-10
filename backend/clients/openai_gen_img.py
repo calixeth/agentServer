@@ -4,11 +4,12 @@ import logging
 
 import aiohttp
 import openai
+from openai.types import ImagesResponse
 
 from config import SETTINGS
 
 
-async def openai_gen_img_svc(img_url: str, prompt: str) -> str | None:
+async def openai_gen_img_svc(img_url: str, prompt: str) -> ImagesResponse | None:
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(img_url) as resp:
@@ -25,7 +26,10 @@ async def openai_gen_img_svc(img_url: str, prompt: str) -> str | None:
             model="gpt-image-1"
         )
 
-        logging.info(f"openai_gen_img_svc: {ret}")
+        if ret:
+            logging.info(f"openai generating image success")
+
+        return ret
     except Exception as e:
         logging.error(f"openai_gen_img_svc error: {e}", exc_info=True)
     return None

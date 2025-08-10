@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class TaskStatus(StrEnum):
     IN_PROGRESS = "in_progress"
     DONE = "done"
+    FAILED = "failed"
 
 
 class SubTask(BaseModel):

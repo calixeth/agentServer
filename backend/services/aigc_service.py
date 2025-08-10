@@ -9,7 +9,7 @@ from agent.prompt.aigc import GEN_COVER_IMG_PROMPT
 from common.error import raise_error, raise_biz
 from entities.bo import TwitterBO
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_save
-from infra.file import img_url_to_base64
+from infra.file import img_url_to_base64, s3_upload_openai_img
 from clients.openai_gen_img import openai_gen_img_svc
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus
 from services.twitter_service import twitter_fetch_user_svc
@@ -45,13 +45,18 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    url = await openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_COVER_IMG_PROMPT)
-    # TODO
     cur_task = await aigc_task_get_by_id(task.task_id)
     if task.cover.sub_task_id != cur_task.cover.sub_task_id:
         return
+    ai_imgs = await openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_COVER_IMG_PROMPT)
+    if ai_imgs and ai_imgs.data:
+        ai_img = ai_imgs.data[0]
+        url = await s3_upload_openai_img(ai_img)
+        if url:
+            cur_task.cover.output = url
+            cur_task.cover.status = TaskStatus.DONE
+            await aigc_task_save(cur_task)
+            return
 
-    cur_task.cover.output = url
-    cur_task.cover.status = TaskStatus.DONE
-
+    cur_task.cover.status = TaskStatus.FAILED
     await aigc_task_save(cur_task)

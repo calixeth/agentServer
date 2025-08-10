@@ -6,6 +6,7 @@ import uuid
 import aioboto3
 import aiohttp
 from fastapi import UploadFile
+from openai.types import Image
 
 from config import SETTINGS
 from infra.db import file_col
@@ -96,6 +97,44 @@ async def s3_upload_file(file: UploadFile) -> FileBO:
     file_col.insert_one(bo.model_dump())
 
     return bo
+
+
+def _guess_content_type(filename: str) -> str:
+    """
+    Guess content type based on filename
+    """
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(filename)
+    return content_type or 'application/octet-stream'
+
+
+async def s3_upload_openai_img(img: Image) -> str | None:
+    """
+    Upload file to S3 storage
+    """
+    try:
+        image_bytes = base64.b64decode(img.b64_json)
+        file_uuid = str(uuid.uuid4())
+        session = aioboto3.Session()
+        async with session.client(
+                "s3",
+                region_name="ap-southeast-2",
+                aws_access_key_id=SETTINGS.AWS_ACCESS_KEY,
+                aws_secret_access_key=SETTINGS.AWS_SECRET_KEY,
+        ) as s3:
+            await s3.put_object(
+                Bucket=bucket_name,
+                Key=file_uuid,
+                Body=image_bytes,
+                ACL="public-read",
+                ContentType='image/png'
+            )
+
+        url = f"https://{bucket_name}.s3.ap-southeast-2.amazonaws.com/{file_uuid}"
+
+        return url
+    except Exception as e:
+        return None
 
 
 def _guess_content_type(filename: str) -> str:
