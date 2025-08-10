@@ -14,6 +14,7 @@ from common.response import RestResponse
 from common.tracing import Otel
 from config import SETTINGS
 from middleware.auth_middleware import JWTAuthMiddleware
+from middleware.trace_middleware import TraceIdMiddleware
 from routes import api_router, voice_router, auth_router
 
 Otel.init()
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 FastAPIInstrumentor.instrument_app(app)
 app.add_middleware(JWTAuthMiddleware)
+app.add_middleware(TraceIdMiddleware)
 app.include_router(api_router.router)
 app.include_router(voice_router.router)
 app.include_router(auth_router.router)
