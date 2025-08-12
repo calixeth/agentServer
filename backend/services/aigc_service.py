@@ -6,7 +6,8 @@ from typing import List
 from fastapi import BackgroundTasks
 from opentelemetry.trace import Status
 
-from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_HAPPY_PROMPY, VIDEO_SAD_PROMPY, VIDEO_DANCE_PROMPY
+from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
+    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY
 from clients.gen_video import veo3_gen_video_svc
 from common.error import raise_error, raise_biz
 from entities.bo import TwitterBO
@@ -81,8 +82,8 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    cur_task = await aigc_task_get_by_id(task.task_id)
     ai_imgs = await openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_COVER_IMG_PROMPT)
+    cur_task = await aigc_task_get_by_id(task.task_id)
     if ai_imgs and ai_imgs.data:
         ai_img = ai_imgs.data[0]
         url = await s3_upload_openai_img(ai_img)
@@ -99,18 +100,23 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
 
 async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
     logging.info(f"_task_video_svc req: {req.model_dump_json()}")
-    cur_task = await aigc_task_get_by_id(task.task_id)
+
     prompt = ""
-    if VideoKeyType.HAPPY == req.key:
-        prompt = VIDEO_HAPPY_PROMPY
-    elif VideoKeyType.SAD == req.key:
-        prompt = VIDEO_SAD_PROMPY
-    elif VideoKeyType.DANCE == req.key:
+    if VideoKeyType.DANCE == req.key:
         prompt = VIDEO_DANCE_PROMPY
-    elif VideoKeyType.HELLO == req.key:
-        prompt = VIDEO_HAPPY_PROMPY
+    elif VideoKeyType.GOGO == req.key:
+        prompt = VIDEO_GOGO_PROMPY
+    elif VideoKeyType.TURN == req.key:
+        prompt = VIDEO_TURN_PROMPY
+    elif VideoKeyType.ANGRY == req.key:
+        prompt = VIDEO_ANGRY_PROMPY
+    elif VideoKeyType.SAYING == req.key:
+        prompt = VIDEO_SAYING_PROMPY
+    elif VideoKeyType.DEFAULT == req.key:
+        prompt = VIDEO_DEFAULT_PROMPY
 
     data = await veo3_gen_video_svc(task.cover.output, prompt)
+    cur_task = await aigc_task_get_by_id(task.task_id)
     if data:
         for v in cur_task.videos:
             if v.input.key == req.key:

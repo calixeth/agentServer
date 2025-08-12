@@ -47,10 +47,12 @@ class Cover(SubTask):
 
 
 class VideoKeyType(StrEnum):
-    HAPPY = "happy"
-    SAD = "sad"
-    HELLO = "hello"
+    TURN = "turn"
+    SAYING = "saying"
+    GOGO = "gogo"
     DANCE = "dance"
+    ANGRY = "angry"
+    DEFAULT = "default"
 
 
 class GenVideoReq(BaseModel):
