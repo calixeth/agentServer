@@ -9,6 +9,7 @@ from opentelemetry.trace import Status
 from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
     VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY
 from clients.gen_video import veo3_gen_video_svc
+from clients.gen_video_v2 import veo3_gen_video_svc_v2
 from common.error import raise_error, raise_biz
 from entities.bo import TwitterBO
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_save
@@ -115,7 +116,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
     elif VideoKeyType.DEFAULT == req.key:
         prompt = VIDEO_DEFAULT_PROMPY
 
-    data = await veo3_gen_video_svc(task.cover.output, prompt)
+    data = await veo3_gen_video_svc_v2(task.cover.output, prompt)
     cur_task = await aigc_task_get_by_id(task.task_id)
     if data:
         for v in cur_task.videos:

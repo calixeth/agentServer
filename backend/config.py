@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     REDIS_SSL: bool = False
     REDIS_DB: int = 0
     REDIS_PREFIX: str = "default"
+    IMAGE_TO_VIDEO_V2: str = ""
+    FA_KEY: str = ""
 
     JWT_SECRET: str = ""
     JWT_EXPIRATION_TIME: int = 1  # default one day

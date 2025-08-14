@@ -38,7 +38,11 @@ class GenCoverImgReq(BaseModel):
 
 
 class AIGCTaskQuery(BaseModel):
-    task_id: str = Field(description="task_id")
+    """
+    task_id or x_username
+    """
+    task_id: str = Field(description="task_id", default=None)
+    x_username: str = Field(description="x_username", default=None)
 
 
 class Cover(SubTask):
