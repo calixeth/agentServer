@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+from contextlib import asynccontextmanager
 
 import fastapi
 import uvicorn
@@ -16,19 +17,30 @@ from common.tracing import Otel
 from config import SETTINGS
 from middleware.auth_middleware import JWTAuthMiddleware
 from middleware.trace_middleware import TraceIdMiddleware
-from routes import api_router, voice_router, auth_router
+from routes import api_router, voice_router, auth_router, twitter_tts_router
+from services.twitter_tts_processor import start_twitter_tts_processor, stop_twitter_tts_processor
 
 Otel.init()
 setup_logger()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await start_twitter_tts_processor()
+    logger.info("Twitter TTS background processor started successfully")
+    yield
+    await stop_twitter_tts_processor()
+    logger.info("Twitter TTS background processor stopped successfully")
+
 logger = logging.getLogger(__name__)
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 FastAPIInstrumentor.instrument_app(app)
 app.add_middleware(JWTAuthMiddleware)
 app.add_middleware(TraceIdMiddleware)
 app.include_router(api_router.router)
 app.include_router(voice_router.router)
 app.include_router(auth_router.router)
+# Include Twitter TTS router
+app.include_router(twitter_tts_router.router, tags=["Twitter TTS"])
 
 
 @app.get("/openapi.json", include_in_schema=False)

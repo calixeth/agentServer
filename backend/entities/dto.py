@@ -84,6 +84,59 @@ class AIGCTask(BaseModel):
     videos: list[Video] = Field(description="videos", default_factory=list)
 
 
+class TwitterTTSRequest(BaseModel):
+    """Request for Twitter TTS task"""
+    twitter_url: str = Field(description="Twitter/X post URL")
+    voice: str = Field(default="alloy", description="TTS voice to use")
+    model: str = Field(default="tts-1", description="TTS model to use")
+    response_format: str = Field(default="mp3", description="Audio format")
+    speed: float = Field(default=1.0, description="Speech speed")
+
+
+class TwitterTTSResponse(BaseModel):
+    """Response for Twitter TTS task"""
+    task_id: str = Field(description="Generated task ID")
+    status: TaskStatus = Field(description="Task status")
+    message: str = Field(description="Response message")
+
+
+class TwitterTTSTask(BaseModel):
+    """Twitter TTS task model"""
+    task_id: str = Field(description="Unique task ID")
+    tenant_id: str = Field(description="Tenant ID")
+    twitter_url: str = Field(description="Twitter/X post URL")
+    tweet_id: str = Field(description="Extracted tweet ID")
+    voice: str = Field(description="TTS voice")
+    model: str = Field(description="TTS model")
+    response_format: str = Field(description="Audio format")
+    speed: float = Field(description="Speech speed")
+    status: TaskStatus = Field(description="Task status")
+    created_at: datetime.datetime = Field(description="Task creation time")
+    updated_at: datetime.datetime = Field(description="Last update time")
+    title: str | None = Field(description="TTS title", default=None)
+    tweet_content: str | None = Field(description="Extracted tweet content", default=None)
+    audio_url: str | None = Field(description="Generated audio file URL", default=None)
+    error_message: str | None = Field(description="Error message if failed", default=None)
+    processing_started_at: datetime.datetime | None = Field(description="Processing start time", default=None)
+    completed_at: datetime.datetime | None = Field(description="Completion time", default=None)
+
+
+class TwitterTTSTaskListResponse(BaseModel):
+    """Response for Twitter TTS task list"""
+    tasks: list[TwitterTTSTask] = Field(description="List of tasks")
+    total: int = Field(description="Total number of tasks")
+    page: int = Field(description="Current page")
+    page_size: int = Field(description="Page size")
+
+
+class TwitterTTSTaskQuery(BaseModel):
+    """Query parameters for Twitter TTS tasks"""
+    tenant_id: str = Field(description="Tenant ID")
+    page: int = Field(default=1, description="Page number")
+    page_size: int = Field(default=20, description="Page size")
+    status: TaskStatus | None = Field(default=None, description="Filter by status")
+
+
 class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str

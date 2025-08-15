@@ -48,9 +48,7 @@ async def login(request: LoginRequest) -> LoginResponse:
                 "Invalid username/email or password"
             )
 
-        # Check password (assuming password is stored as hash)
-        # You may need to implement password hashing verification here
-        if not user.get("password") == request.password:  # This should be hashed password comparison
+        if not user.get("password") == request.password:
             raise CustomAgentException(
                 ErrorCode.INVALID_CREDENTIALS,
                 "Invalid username/email or password"

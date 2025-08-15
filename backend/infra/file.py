@@ -60,6 +60,59 @@ async def download_and_upload_image(url):
     return ""
 
 
+async def upload_audio_file(audio_data: bytes, file_extension: str) -> str | None:
+    """
+    Upload audio file data to S3 storage
+    
+    Args:
+        audio_data: Audio data as bytes
+        file_extension: File extension (e.g., 'mp3', 'opus', 'aac', 'flac')
+        
+    Returns:
+        Audio file URL if successful, None if failed
+    """
+    try:
+        file_uuid = str(uuid.uuid4())
+        file_key = f"{file_uuid}.{file_extension}"
+        
+        # Determine content type based on file extension
+        content_type_map = {
+            'mp3': 'audio/mpeg',
+            'opus': 'audio/opus',
+            'aac': 'audio/aac',
+            'flac': 'audio/flac',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg'
+        }
+        
+        content_type = content_type_map.get(file_extension.lower(), 'audio/mpeg')
+        
+        session = aioboto3.Session()
+        async with session.client(
+                "s3",
+                region_name="ap-southeast-2",
+                aws_access_key_id=SETTINGS.AWS_ACCESS_KEY,
+                aws_secret_access_key=SETTINGS.AWS_SECRET_KEY,
+        ) as s3:
+            await s3.put_object(
+                Bucket=bucket_name,
+                Key=file_key,
+                Body=audio_data,
+                ACL="public-read",
+                ContentType=content_type
+            )
+        
+        audio_url = f"https://{bucket_name}.s3.ap-southeast-2.amazonaws.com/{file_key}"
+        
+        logging.info(f"Audio file uploaded to S3: {file_key}, size: {len(audio_data)} bytes, type: {content_type}")
+        
+        return audio_url
+        
+    except Exception as e:
+        logging.error(f"Error uploading audio file: {e}", exc_info=True)
+        return None
+
+
 async def s3_upload_file(file: UploadFile) -> FileBO:
     """
     Upload file to S3 storage

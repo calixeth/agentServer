@@ -38,4 +38,14 @@ class WalletLoginRequest(BaseModel):
     chain_type: Optional[ChainType] = Field(ChainType.ETHEREUM, description="Blockchain type for wallet authentication")
 
 
+class TwitterTTSRequestBO(BaseModel):
+    """Business object for Twitter TTS request"""
+    twitter_url: str = Field(description="Twitter/X post URL")
+    voice: str = Field(default="alloy", description="TTS voice to use")
+    model: str = Field(default="tts-1", description="TTS model to use")
+    response_format: str = Field(default="mp3", description="Audio format")
+    speed: float = Field(default=1.0, description="Speech speed")
+    tenant_id: str = Field(description="Tenant ID")
+
+
 
