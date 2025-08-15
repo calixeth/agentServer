@@ -8,12 +8,14 @@ from starlette.responses import Response
 
 from common.error import raise_error
 from common.response import RestResponse
-from entities.bo import FileBO
-from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman
-from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col
+from entities.bo import FileBO, TwitterDTO
+from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username
+from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
+    digital_human_get_by_id, digital_human_get_by_username
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id
+from services.twitter_service import twitter_fetch_user_svc
 
 logger = logging.getLogger(__name__)
 
@@ -139,3 +141,38 @@ async def list_digital_human(
     data_list = await cursor.to_list(length=pagesize)
     tasks = [DigitalHuman(**doc) for doc in data_list]
     return RestResponse(data=tasks)
+
+
+@router.post("/api/aigc_task/get_by_id",
+             summary="aigc_task/get_by_id",
+             response_model=RestResponse[DigitalHuman]
+             )
+async def get_digital_human(req: ID):
+    task = await digital_human_get_by_id(req.id)
+    return RestResponse(data=task)
+
+
+@router.post("/api/aigc_task/get_by_username",
+             summary="aigc_task/get_by_username",
+             response_model=RestResponse[DigitalHuman]
+             )
+async def get_digital_human_username(req: Username):
+    task = await digital_human_get_by_username(req.username)
+    return RestResponse(data=task)
+
+
+@router.post("/api/x/user",
+             summary="x/user",
+             response_model=RestResponse[TwitterDTO]
+             )
+async def get_x_user(req: Username):
+    username = req.username.replace("https://x.com/", "")
+    user = await twitter_fetch_user_svc(username)
+    return RestResponse(data=TwitterDTO(
+        name=user.data.get("core", {}).get("name"),
+        screen_name=user.data.get("core", {}).get("screen_name"),
+        profile_banner_url=user.data.get("legacy", {}).get("profile_banner_url"),
+        profile_image_url_https=user.avatar_url,
+        followers_count=user.data.get("legacy", {}).get("followers_count"),
+        friends_count=user.data.get("legacy", {}).get("friends_count"),
+    ))

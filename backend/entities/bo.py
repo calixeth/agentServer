@@ -14,6 +14,15 @@ class TwitterBO(BaseModel):
     avatar_base64: str = ""
 
 
+class TwitterDTO(BaseModel):
+    name: str = Field(..., description="Display name of the user")
+    screen_name: str = Field(..., description="Unique Twitter handle (username)")
+    profile_banner_url: str = Field(..., description="URL of the profile banner image")
+    profile_image_url_https: str = Field(..., description="URL of the profile image in HTTPS")
+    followers_count: int = Field(..., description="Number of followers")
+    friends_count: int = Field(..., description="Number of accounts the user is following")
+
+
 class FileBO(BaseModel):
     url: str
 
@@ -27,9 +36,11 @@ class RefreshTokenRequest(BaseModel):
     """Request for refreshing access token"""
     refresh_token: str
 
+
 class LoginRequest(BaseModel):
     username: str = Field(..., description="Username or email for login")
     password: str
+
 
 class WalletLoginRequest(BaseModel):
     """Request for wallet login/registration"""
@@ -46,6 +57,3 @@ class TwitterTTSRequestBO(BaseModel):
     response_format: str = Field(default="mp3", description="Audio format")
     speed: float = Field(default=1.0, description="Speech speed")
     tenant_id: str = Field(description="Tenant ID")
-
-
-

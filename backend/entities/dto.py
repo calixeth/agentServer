@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -46,6 +46,19 @@ class AIGCTaskID(BaseModel):
     task_id: str = Field(description="task_id", default=None)
 
 
+class ID(BaseModel):
+    """
+    id
+    """
+    id: str = Field(description="id", default=None)
+
+
+class Username(BaseModel):
+    """
+    username
+    """
+    username: str = Field(description="username", default=None)
+
 class Cover(SubTask):
     input: GenCoverImgReq
     output: str | None = Field(description="cover img url", default=None)
@@ -87,6 +100,7 @@ class AIGCTask(BaseModel):
     def check_cover(self):
         if not self.cover or not self.cover.output or not self.cover.input.x_link:
             raise_error("cover img not found")
+
 
 class TwitterTTSRequest(BaseModel):
     """Request for Twitter TTS task"""
@@ -172,6 +186,7 @@ class TokenResponse(BaseModel):
     access_token_expires_in: int  # in seconds
     refresh_token_expires_in: int  # in seconds
     user: dict
+
 
 class DigitalVideo(BaseModel):
     key: str = Field(description="key")
