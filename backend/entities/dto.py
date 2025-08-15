@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from common.error import raise_error
+
 
 class TaskStatus(StrEnum):
     IN_PROGRESS = "in_progress"
@@ -37,12 +39,11 @@ class GenCoverImgReq(BaseModel):
     img_url: str = Field(default="", description="manually specify cover img")
 
 
-class AIGCTaskQuery(BaseModel):
+class AIGCTaskID(BaseModel):
     """
-    task_id or x_username
+    task_id
     """
     task_id: str = Field(description="task_id", default=None)
-    x_username: str = Field(description="x_username", default=None)
 
 
 class Cover(SubTask):
@@ -83,6 +84,9 @@ class AIGCTask(BaseModel):
     cover: Cover | None = Field(description="cover", default=None)
     videos: list[Video] = Field(description="videos", default_factory=list)
 
+    def check_cover(self):
+        if not self.cover or not self.cover.output or not self.cover.input.x_link:
+            raise_error("cover img not found")
 
 class TwitterTTSRequest(BaseModel):
     """Request for Twitter TTS task"""
@@ -168,3 +172,16 @@ class TokenResponse(BaseModel):
     access_token_expires_in: int  # in seconds
     refresh_token_expires_in: int  # in seconds
     user: dict
+
+class DigitalVideo(BaseModel):
+    key: str = Field(description="key")
+    view_url: str = Field(description="video url")
+
+
+class DigitalHuman(BaseModel):
+    id: str = Field(description="Digital human ID")
+    from_task_id: str = Field(description="from_task_id")
+    from_tenant_id: str = Field(description="from_tenant_id")
+    created_at: datetime.datetime = Field(description="created_at")
+    username: str = Field(description="username")
+    videos: list[DigitalVideo] = Field(description="videos", default_factory=list)

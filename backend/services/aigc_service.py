@@ -1,21 +1,19 @@
 import datetime
 import logging
 import uuid
-from typing import List
 
 from fastapi import BackgroundTasks
-from opentelemetry.trace import Status
 
 from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
     VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY
-from clients.gen_video import veo3_gen_video_svc
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
-from common.error import raise_error, raise_biz
-from entities.bo import TwitterBO
-from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_save
-from infra.file import img_url_to_base64, s3_upload_openai_img
 from clients.openai_gen_img import openai_gen_img_svc
-from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, GenVideoResp
+from common.error import raise_error
+from entities.bo import TwitterBO
+from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
+    DigitalVideo
+from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
+from infra.file import s3_upload_openai_img
 from services.twitter_service import twitter_fetch_user_svc
 
 
@@ -127,3 +125,39 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
                 break
 
         await aigc_task_save(cur_task)
+
+
+async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
+    task: AIGCTask = await aigc_task_get_by_id(task_id)
+    if not task:
+        raise_error("task not found")
+
+    task.check_cover()
+    x_link = task.cover.input.x_link
+    username = x_link.replace("https://x.com/", "")
+
+    org = await digital_human_get_by_username(username)
+    if org:
+        raise_error("username is repeated")
+
+    videos: list[DigitalVideo] = []
+    for v in task.videos:
+        if v.status == TaskStatus.DONE and v.output.view_url:
+            videos.append(DigitalVideo(
+                key=v.input.key,
+                view_url=v.output.view_url,
+            ))
+
+    if not videos:
+        raise_error("video not found")
+
+    bo = DigitalHuman(
+        id=str(uuid.uuid4()),
+        from_task_id=task.task_id,
+        from_tenant_id=task.tenant_id,
+        username=username,
+        videos=videos,
+        created_at=datetime.datetime.now()
+    )
+    await digital_human_save(bo)
+    return bo

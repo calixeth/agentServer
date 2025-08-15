@@ -36,10 +36,9 @@ class Settings(BaseSettings):
 
     JWT_SECRET: str = ""
     JWT_EXPIRATION_TIME: int = 1  # default one day
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12 * 30 # default 30 days
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 60 # default 60 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12 * 30  # default 30 days
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 60  # default 60 days
     TEST_TOKEN = ""
-
 
 
 SETTINGS = Settings()

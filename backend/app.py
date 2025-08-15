@@ -64,6 +64,6 @@ async def default_exception_handler(request: fastapi.Request, exc: Exception):
 if __name__ == '__main__':
     set_default_openai_key(SETTINGS.OPENAI_API_KEY)
     os.environ["OPENAI_API_KEY"] = SETTINGS.OPENAI_API_KEY
-    os.environ["FAL_KEY"] = SETTINGS.FAL_KEY
+    os.environ["FAL_KEY"] = SETTINGS.FA_KEY
 
     uvicorn.run(app, host=SETTINGS.HOST, port=SETTINGS.PORT, workers=SETTINGS.WORKERS, log_config="log_config.yaml")

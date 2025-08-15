@@ -3,7 +3,7 @@ import asyncio
 import motor.motor_asyncio
 
 from config import SETTINGS
-from entities.dto import AIGCTask, TwitterTTSTask
+from entities.dto import AIGCTask, TwitterTTSTask, DigitalHuman
 
 client = motor.motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO_STR)
 db = client[SETTINGS.MONGO_DB]
@@ -12,6 +12,19 @@ file_col = db["file"]
 aigc_task_col = db["aigc_task"]
 users_col = db["users"]  # Collection for user authentication data
 twitter_tts_task_col = db["twitter_tts_task"]  # Collection for Twitter TTS tasks
+digital_human_col = db["digital_human"]
+
+
+async def digital_human_save(digital_human: DigitalHuman):
+    await digital_human_col.replace_one({"username": digital_human.username}, digital_human.model_dump(), upsert=True)
+
+
+async def digital_human_get_by_username(username: str) -> DigitalHuman | None:
+    ret = await digital_human_col.find_one({"username": username})
+    if ret:
+        return DigitalHuman(**ret)
+    else:
+        return None
 
 
 async def aigc_task_get_by_id(task_id: str) -> AIGCTask | None:
@@ -45,24 +58,25 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None) -> tuple[list[TwitterTTSTask], int]:
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None) -> \
+        tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination and optional status filter"""
     skip = (page - 1) * page_size
-    
+
     # Build filter
     filter_query = {"tenant_id": tenant_id}
     if status:
         filter_query["status"] = status
-    
+
     # Get total count
     total = await twitter_tts_task_col.count_documents(filter_query)
-    
+
     # Get tasks with pagination
     cursor = twitter_tts_task_col.find(filter_query).sort("created_at", -1).skip(skip).limit(page_size)
     tasks = []
     async for doc in cursor:
         tasks.append(TwitterTTSTask(**doc))
-    
+
     return tasks, total
 
 
@@ -72,7 +86,7 @@ async def twitter_tts_task_get_pending() -> list[TwitterTTSTask]:
     tasks = []
     async for doc in cursor:
         tasks.append(TwitterTTSTask(**doc))
-    
+
     return tasks
 
 

@@ -4,16 +4,16 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
-from starlette.responses import Response, JSONResponse
+from starlette.responses import Response
 
 from common.error import raise_error
 from common.response import RestResponse
-from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id
-from infra.file import s3_upload_file
 from entities.bo import FileBO
-from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskQuery, GenVideoReq
+from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman
+from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col
+from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
-from services.aigc_service import gen_cover_img_svc, gen_video_svc
+from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ async def gen_scenario_video(req: GenVideoReq, background_tasks: BackgroundTasks
 async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_user), ):
     tenant_id = user.get("tenant_id", "")
     count = await aigc_task_count_by_tenant_id(tenant_id)
-    if count > 1:
+    if count > 0:
         raise_error("Too many tasks")
     task = AIGCTask(
         task_id=str(uuid.uuid4()),
@@ -90,7 +90,7 @@ async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_u
              summary="aigc_task/get",
              response_model=RestResponse[AIGCTask]
              )
-async def get_aigc_task(req: AIGCTaskQuery):
+async def get_aigc_task(req: AIGCTaskID):
     task = await aigc_task_get_by_id(req.task_id)
     return RestResponse(data=task)
 
@@ -111,4 +111,31 @@ async def list_aigc_task(
         .limit(pagesize)
     data_list = await cursor.to_list(length=pagesize)
     tasks = [AIGCTask(**doc) for doc in data_list]
+    return RestResponse(data=tasks)
+
+
+@router.post("/api/aigc_task/publish_digital_human",
+             summary="aigc_task/publish_digital_human",
+             response_model=RestResponse[DigitalHuman]
+             )
+async def get_aigc_publish(req: AIGCTaskID):
+    ret = await aigc_task_publish_by_id(req.task_id)
+    return RestResponse(data=ret)
+
+
+@router.post("/api/digital_human/list",
+             summary="digital_human/list",
+             response_model=RestResponse[list[DigitalHuman]]
+             )
+async def list_digital_human(
+        page: int = Query(1, ge=1),
+        pagesize: int = Query(10, ge=1, le=1000),
+        user: Optional[dict] = Depends(get_optional_current_user), ):
+    skip = (page - 1) * pagesize
+    cursor = digital_human_col.find({}) \
+        .sort("created_at", -1) \
+        .skip(skip) \
+        .limit(pagesize)
+    data_list = await cursor.to_list(length=pagesize)
+    tasks = [DigitalHuman(**doc) for doc in data_list]
     return RestResponse(data=tasks)
