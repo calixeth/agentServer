@@ -59,6 +59,7 @@ class Username(BaseModel):
     """
     username: str = Field(description="username", default=None)
 
+
 class Cover(SubTask):
     input: GenCoverImgReq
     output: str | None = Field(description="cover img url", default=None)
@@ -198,5 +199,6 @@ class DigitalHuman(BaseModel):
     from_task_id: str = Field(description="from_task_id")
     from_tenant_id: str = Field(description="from_tenant_id")
     created_at: datetime.datetime = Field(description="created_at")
+    updated_at: datetime.datetime = Field(description="updated_at")
     username: str = Field(description="username")
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)

@@ -137,8 +137,12 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
     username = x_link.replace("https://x.com/", "")
 
     org = await digital_human_get_by_username(username)
+    update = False
     if org:
-        raise_error("username is repeated")
+        if org.from_task_id != task.task_id:
+            raise_error("username is repeated")
+        else:
+            update = True
 
     videos: list[DigitalVideo] = []
     for v in task.videos:
@@ -151,13 +155,25 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
     if not videos:
         raise_error("video not found")
 
+    if update:
+        id = org.id
+    else:
+        id = str(uuid.uuid4())
+
+    if not update:
+        created_at = datetime.datetime.now()
+    else:
+        created_at = org.created_at
+
     bo = DigitalHuman(
-        id=str(uuid.uuid4()),
+        id=id,
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
         username=username,
         videos=videos,
-        created_at=datetime.datetime.now()
+        updated_at=datetime.datetime.now(),
+        created_at=created_at,
     )
+
     await digital_human_save(bo)
     return bo

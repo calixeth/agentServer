@@ -11,7 +11,7 @@ from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
-    digital_human_get_by_id, digital_human_get_by_username, aigc_task_delete_by_id
+    digital_human_get_by_id, digital_human_get_by_username, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id
@@ -99,11 +99,11 @@ async def get_aigc_task(req: AIGCTaskID):
 
 @router.post("/api/aigc_task/delete",
              summary="aigc_task/delete",
-             response_model=RestResponse[AIGCTask]
+             response_model=RestResponse
              )
-async def get_aigc_task(req: AIGCTaskID):
-    task = await aigc_task_delete_by_id(req.task_id)
-    return RestResponse(data=task)
+async def delete_aigc_task(req: AIGCTaskID):
+    await aigc_task_delete_by_id(req.task_id)
+    return RestResponse()
 
 
 @router.post("/api/aigc_task/list",
@@ -168,6 +168,15 @@ async def get_digital_human(req: ID):
 async def get_digital_human_username(req: Username):
     task = await digital_human_get_by_username(req.username)
     return RestResponse(data=task)
+
+
+@router.post("/api/digital_human/delete",
+             summary="digital_human/delete",
+             response_model=RestResponse[AIGCTask]
+             )
+async def delete_digital_human(req: ID):
+    await digital_human_col_delete_by_id(req.id)
+    return RestResponse()
 
 
 @router.post("/api/x/user",

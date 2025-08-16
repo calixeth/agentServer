@@ -27,6 +27,10 @@ async def digital_human_get_by_username(username: str) -> DigitalHuman | None:
         return None
 
 
+async def digital_human_col_delete_by_id(id: str):
+    await digital_human_col.delete_one({'id': id})
+
+
 async def digital_human_get_by_id(id: str) -> DigitalHuman | None:
     ret = await digital_human_col.find_one({"id": id})
     if ret:
