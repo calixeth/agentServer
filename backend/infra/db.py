@@ -26,6 +26,7 @@ async def digital_human_get_by_username(username: str) -> DigitalHuman | None:
     else:
         return None
 
+
 async def digital_human_get_by_id(id: str) -> DigitalHuman | None:
     ret = await digital_human_col.find_one({"id": id})
     if ret:
@@ -40,6 +41,10 @@ async def aigc_task_get_by_id(task_id: str) -> AIGCTask | None:
         return AIGCTask(**ret)
     else:
         return None
+
+
+async def aigc_task_delete_by_id(task_id: str):
+    await aigc_task_col.delete_one({'task_id': task_id})
 
 
 async def aigc_task_count_by_tenant_id(tenant_id: str) -> int:
