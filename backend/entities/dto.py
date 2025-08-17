@@ -60,9 +60,14 @@ class Username(BaseModel):
     username: str = Field(description="username", default=None)
 
 
+class GenCoverResp(BaseModel):
+    first_frame_img_url: str = Field(description="first_frame_url")
+    cover_img_url: str = Field(description="cover_url")
+
+
 class Cover(SubTask):
     input: GenCoverImgReq
-    output: str | None = Field(description="cover img url", default=None)
+    output: GenCoverResp | None = Field(description="cover", default=None)
 
 
 class VideoKeyType(StrEnum):

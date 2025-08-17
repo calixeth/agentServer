@@ -1,5 +1,13 @@
+GEN_FRAME_IMG_PROMPT = """\
+Anime style, highly detailed, clean sharp line art, vibrant colors, neat shadows. Full-body standing portrait, 512x768px, front-facing, looking at camera. Entire head and hair fully inside frame with space above. Symmetrical composition, clear details. Original facial features, hairstyle, expression, body proportions, and clothing preserved. Pure black background, no borders, no text.
+"""
+
 GEN_COVER_IMG_PROMPT = """\
-Create a high-definition, full-body standing portrait of the character, 512px wide and 768px tall, in a front-facing pose directly looking at the camera. Keep the original facial features, hairstyle, expression, facial structure, and body proportions exactly the same as in the source image. Remove the background, borders, and text; replace with a solid pure black background. Maintain the same clothing style as in the original image, matching the character’s temperament. Ensure symmetrical composition, clean framing, and sharp, clear details.
+Use Image 1 as a reference to generate an image based on Image 2, with the following requirements:
+The metallic frame must be complete, and the background behind the frame should be pure black.
+The portrait must be symmetrical and centered in composition.
+At the bottom, add the text 'KOLI' in metallic Gothic-style font.
+The portrait should have spacing from the top edge of the image, ensuring the hair is fully visible.
 """
 
 VIDEO_ANGRY_PROMPY = """\

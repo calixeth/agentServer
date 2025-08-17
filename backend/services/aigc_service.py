@@ -5,13 +5,14 @@ import uuid
 from fastapi import BackgroundTasks
 
 from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
-    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY
+    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY, GEN_FRAME_IMG_PROMPT
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
-from clients.openai_gen_img import openai_gen_img_svc
+from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
 from common.error import raise_error
+from config import SETTINGS
 from entities.bo import TwitterBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
-    DigitalVideo
+    DigitalVideo, GenCoverResp
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services.twitter_service import twitter_fetch_user_svc
@@ -81,17 +82,33 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    ai_imgs = await openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_COVER_IMG_PROMPT)
+    first_frame_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_FRAME_IMG_PROMPT)
+    cover_imgs_task = openai_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400, SETTINGS.GEN_T_URL],
+                                          prompt=GEN_COVER_IMG_PROMPT)
+
+    first_frame_imgs = await first_frame_imgs_task
+    cover_imgs = await cover_imgs_task
+
     cur_task = await aigc_task_get_by_id(task.task_id)
-    if ai_imgs and ai_imgs.data:
-        ai_img = ai_imgs.data[0]
-        url = await s3_upload_openai_img(ai_img)
-        if url:
-            cur_task.cover.output = url
-            cur_task.cover.status = TaskStatus.DONE
-            cur_task.cover.done_at = datetime.datetime.now()
-            await aigc_task_save(cur_task)
-            return
+    first_frame_url = ""
+    if first_frame_imgs and first_frame_imgs.data:
+        ai_img = first_frame_imgs.data[0]
+        first_frame_url = await s3_upload_openai_img(ai_img)
+
+    cover_url = ""
+    if cover_imgs and cover_imgs.data:
+        ai_img = cover_imgs.data[0]
+        cover_url = await s3_upload_openai_img(ai_img)
+
+    if first_frame_url and cover_url:
+        cur_task.cover.output = GenCoverResp(
+            first_frame_img_url=first_frame_url,
+            cover_img_url=cover_url,
+        )
+        cur_task.cover.status = TaskStatus.DONE
+        cur_task.cover.done_at = datetime.datetime.now()
+        await aigc_task_save(cur_task)
+        return
 
     cur_task.cover.status = TaskStatus.FAILED
     await aigc_task_save(cur_task)
@@ -114,7 +131,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
     elif VideoKeyType.DEFAULT == req.key:
         prompt = VIDEO_DEFAULT_PROMPY
 
-    data = await veo3_gen_video_svc_v2(task.cover.output, prompt)
+    data = await veo3_gen_video_svc_v2(task.cover.output.first_frame_img_url, prompt)
     cur_task = await aigc_task_get_by_id(task.task_id)
     if data:
         for v in cur_task.videos:
@@ -170,7 +187,7 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
         username=username,
-        cover_img=task.cover.output,
+        cover_img=task.cover.output.cover_img_url,
         videos=videos,
         updated_at=datetime.datetime.now(),
         created_at=created_at,
