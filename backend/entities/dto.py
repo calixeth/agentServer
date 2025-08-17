@@ -223,4 +223,5 @@ class DigitalHuman(BaseModel):
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
     username: str = Field(description="username")
+    cover_img: str = Field(description="cover_img")
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)

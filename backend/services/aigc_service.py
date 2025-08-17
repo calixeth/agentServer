@@ -170,6 +170,7 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
         username=username,
+        cover_img=task.cover.output,
         videos=videos,
         updated_at=datetime.datetime.now(),
         created_at=created_at,

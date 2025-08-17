@@ -23,6 +23,6 @@ It stands like a professional TV news anchor, completely still, with no movement
 """
 
 VIDEO_DEFAULT_PROMPY = """\
-It first glances to the left, then to the right, then after a moment looks straight into the camera. It points directly toward you and shouts loudly, “I got you!
+Smiling gracefully, it sways gently from side to side with very small movements. After a moment, it rests one hand on the chin, maintaining a subtle, reserved smile.
 """
 

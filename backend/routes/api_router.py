@@ -195,11 +195,12 @@ async def get_x_user(req: Username):
         if ret.get("result", {}).get("timeline", {}):
             timeline = ret["result"]["timeline"]
     except Exception as err:
-        pass
+        logger.error(err)
     return RestResponse(data=TwitterDTO(
         name=user.data.get("core", {}).get("name"),
         screen_name=user.data.get("core", {}).get("screen_name"),
         profile_banner_url=user.data.get("legacy", {}).get("profile_banner_url"),
+        description=user.data.get("legacy", {}).get("description"),
         profile_image_url_https=user.avatar_url,
         followers_count=user.data.get("legacy", {}).get("followers_count"),
         friends_count=user.data.get("legacy", {}).get("friends_count"),

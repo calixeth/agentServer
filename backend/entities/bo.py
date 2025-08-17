@@ -22,6 +22,7 @@ class TwitterDTO(BaseModel):
     profile_image_url_https: str = Field(..., description="URL of the profile image in HTTPS")
     followers_count: int = Field(..., description="Number of followers")
     friends_count: int = Field(..., description="Number of accounts the user is following")
+    description: str = Field(..., description="Description of the user")
     timeline: dict = Field(..., description="timeline posts")
 
 
