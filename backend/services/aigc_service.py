@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import uuid
@@ -82,12 +83,16 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    first_frame_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400, prompt=GEN_FRAME_IMG_PROMPT)
-    cover_imgs_task = openai_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400, SETTINGS.GEN_T_URL],
+    first_frame_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
+                                               prompt=GEN_FRAME_IMG_PROMPT)
+    cover_imgs_task = openai_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400,
+                                                    SETTINGS.GEN_T_URL],
                                           prompt=GEN_COVER_IMG_PROMPT)
 
-    first_frame_imgs = await first_frame_imgs_task
-    cover_imgs = await cover_imgs_task
+    first_frame_imgs, cover_imgs = await asyncio.gather(
+        first_frame_imgs_task,
+        cover_imgs_task
+    )
 
     cur_task = await aigc_task_get_by_id(task.task_id)
     first_frame_url = ""
