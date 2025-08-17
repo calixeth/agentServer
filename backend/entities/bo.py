@@ -1,6 +1,7 @@
 from typing import Optional, List
 
 from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 from entities.enums import ChainType
 
@@ -53,8 +54,10 @@ class WalletLoginRequest(BaseModel):
 class TwitterTTSRequestBO(BaseModel):
     """Business object for Twitter TTS request"""
     twitter_url: str = Field(description="Twitter/X post URL")
-    voice: str = Field(default="alloy", description="TTS voice to use")
-    model: str = Field(default="tts-1", description="TTS model to use")
-    response_format: str = Field(default="mp3", description="Audio format")
-    speed: float = Field(default=1.0, description="Speech speed")
+    voice: str | None = Field(default=None, description="TTS voice to use")
+    model: str | None = Field(default=None, description="TTS model to use")
+    response_format: str | None = Field(default=None, description="Audio format")
+    speed: float | None = Field(default=None, description="Speech speed")
     tenant_id: str = Field(description="Tenant ID")
+    voice_id: Optional[str] = Field(description="Voice ID")
+    audio_url: Optional[str] = Field(description="Audio URL")

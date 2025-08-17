@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from enum import StrEnum
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -104,12 +104,14 @@ class AIGCTask(BaseModel):
 
 
 class TwitterTTSRequest(BaseModel):
-    """Request for Twitter TTS task"""
+    """Request model for creating Twitter TTS task"""
     twitter_url: str = Field(description="Twitter/X post URL")
-    voice: str = Field(default="alloy", description="TTS voice to use")
-    model: str = Field(default="tts-1", description="TTS model to use")
-    response_format: str = Field(default="mp3", description="Audio format")
-    speed: float = Field(default=1.0, description="Speech speed")
+    voice: Optional[str] = Field(default=None, description="TTS voice to use")
+    model: Optional[str] = Field(default=None, description="TTS model to use")
+    response_format: Optional[str] = Field(default=None, description="Audio format")
+    speed: Optional[float] = Field(default=None, description="Speech speed")
+    voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
+    audio_url: Optional[str] = Field(default=None, description="Optional audio URL for TTS")
 
 
 class TwitterTTSResponse(BaseModel):
@@ -125,15 +127,17 @@ class TwitterTTSTask(BaseModel):
     tenant_id: str = Field(description="Tenant ID")
     twitter_url: str = Field(description="Twitter/X post URL")
     tweet_id: str = Field(description="Extracted tweet ID")
-    voice: str = Field(description="TTS voice")
-    model: str = Field(description="TTS model")
-    response_format: str = Field(description="Audio format")
-    speed: float = Field(description="Speech speed")
+    voice: Optional[str] = Field(description="TTS voice")
+    model: Optional[str] = Field(description="TTS model")
+    response_format: Optional[str] = Field(description="Audio format")
+    speed: Optional[float] = Field(description="Speech speed")
     status: TaskStatus = Field(description="Task status")
     created_at: datetime.datetime = Field(description="Task creation time")
     updated_at: datetime.datetime = Field(description="Last update time")
     title: str | None = Field(description="TTS title", default=None)
     tweet_content: str | None = Field(description="Extracted tweet content", default=None)
+    voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
+    audio_url_input: Optional[str] = Field(default=None, description="Optional audio URL for TTS")
     audio_url: str | None = Field(description="Generated audio file URL", default=None)
     error_message: str | None = Field(description="Error message if failed", default=None)
     processing_started_at: datetime.datetime | None = Field(description="Processing start time", default=None)
@@ -154,6 +158,24 @@ class TwitterTTSTaskQuery(BaseModel):
     page: int = Field(default=1, description="Page number")
     page_size: int = Field(default=20, description="Page size")
     status: TaskStatus | None = Field(default=None, description="Filter by status")
+
+
+class PredefinedVoice(BaseModel):
+    """Predefined voice model"""
+    voice_id: str = Field(description="Unique voice identifier")
+    name: str = Field(description="Voice display name")
+    audio_url: Optional[str] = Field(default=None, description="Sample audio URL for preview")
+    description: Optional[str] = Field(default=None, description="Voice description")
+    category: Optional[str] = Field(default=None, description="Voice category")
+    is_active: bool = Field(default=True, description="Whether the voice is available")
+    created_at: datetime.datetime = Field(description="Creation time")
+    updated_at: Optional[datetime.datetime] = Field(default=None, description="Last update time")
+
+
+class PredefinedVoiceListResponse(BaseModel):
+    """Response for predefined voice list"""
+    voices: list[PredefinedVoice] = Field(description="List of predefined voices")
+    total: int = Field(description="Total number of voices")
 
 
 class LoginResponse(BaseModel):

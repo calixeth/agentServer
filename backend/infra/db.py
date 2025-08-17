@@ -4,6 +4,7 @@ import motor.motor_asyncio
 
 from config import SETTINGS
 from entities.dto import AIGCTask, TwitterTTSTask, DigitalHuman
+from entities.dto import PredefinedVoice
 
 client = motor.motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO_STR)
 db = client[SETTINGS.MONGO_DB]
@@ -13,6 +14,7 @@ aigc_task_col = db["aigc_task"]
 users_col = db["users"]  # Collection for user authentication data
 twitter_tts_task_col = db["twitter_tts_task"]  # Collection for Twitter TTS tasks
 digital_human_col = db["digital_human"]
+predefined_voice_col = db["predefined_voice"]
 
 
 async def digital_human_save(digital_human: DigitalHuman):
@@ -76,19 +78,19 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
 
 async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
-    """Get Twitter TTS tasks by tenant with pagination and optional status filter"""
+    """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size
-
-    # Build filter
-    filter_query = {"tenant_id": tenant_id}
+    
+    # Build query
+    query = {"tenant_id": tenant_id}
     if status:
-        filter_query["status"] = status
-
+        query["status"] = status
+    
     # Get total count
-    total = await twitter_tts_task_col.count_documents(filter_query)
-
+    total = await twitter_tts_task_col.count_documents(query)
+    
     # Get tasks with pagination
-    cursor = twitter_tts_task_col.find(filter_query).sort("created_at", -1).skip(skip).limit(page_size)
+    cursor = twitter_tts_task_col.find(query).sort("created_at", -1).skip(skip).limit(page_size)
     tasks = []
     async for doc in cursor:
         tasks.append(TwitterTTSTask(**doc))
@@ -104,6 +106,52 @@ async def twitter_tts_task_get_pending() -> list[TwitterTTSTask]:
         tasks.append(TwitterTTSTask(**doc))
 
     return tasks
+
+
+# Predefined Voice operations
+async def predefined_voice_save(voice: PredefinedVoice):
+    """Save or update predefined voice"""
+    await predefined_voice_col.replace_one({"voice_id": voice.voice_id}, voice.model_dump(), upsert=True)
+
+
+async def predefined_voice_get_all(category: str = None, is_active: bool = True) -> tuple[list[PredefinedVoice], int]:
+    """Get all predefined voices with optional filtering"""
+    # Build query
+    query = {"is_active": is_active}
+    if category:
+        query["category"] = category
+    
+    # Get total count
+    total = await predefined_voice_col.count_documents(query)
+    
+    # Get voices
+    cursor = predefined_voice_col.find(query).sort("name", 1)
+    voices = []
+    async for doc in cursor:
+        # Handle missing fields with defaults
+        if "audio_url" not in doc:
+            doc["audio_url"] = None
+        if "updated_at" not in doc:
+            doc["updated_at"] = doc.get("created_at")  # Use created_at as fallback
+        
+        voices.append(PredefinedVoice(**doc))
+
+    return voices, total
+
+
+async def predefined_voice_get_by_id(voice_id: str) -> PredefinedVoice | None:
+    """Get predefined voice by ID"""
+    ret = await predefined_voice_col.find_one({"voice_id": voice_id})
+    if ret:
+        # Handle missing fields with defaults
+        if "audio_url" not in ret:
+            ret["audio_url"] = None
+        if "updated_at" not in ret:
+            ret["updated_at"] = ret.get("created_at")  # Use created_at as fallback
+        
+        return PredefinedVoice(**ret)
+    else:
+        return None
 
 
 async def create_user_indexes():
@@ -131,16 +179,26 @@ async def create_twitter_tts_indexes():
         print(f"Error creating Twitter TTS task indexes: {e}")
 
 
-def init_indexes():
+async def create_predefined_voice_indexes():
+    """Create indexes for the predefined_voice collection"""
     try:
-        asyncio.run(create_user_indexes())
-        asyncio.run(create_twitter_tts_indexes())
-    except RuntimeError:
-        # Already in an event loop (e.g. FastAPI, Jupyter)
-        loop = asyncio.get_event_loop()
-        loop.create_task(create_user_indexes())
-        loop.create_task(create_twitter_tts_indexes())
-        print("create_indexes scheduled in existing event loop")
+        await predefined_voice_col.create_index("voice_id", unique=True)
+        await predefined_voice_col.create_index("name")
+        await predefined_voice_col.create_index("category")
+        await predefined_voice_col.create_index("is_active")
+        await predefined_voice_col.create_index("created_at")
+        print("Predefined voice indexes created successfully")
+    except Exception as e:
+        print(f"Error creating predefined voice indexes: {e}")
 
-# Only call this explicitly (optional)
-# init_indexes()
+
+async def init_indexes():
+    try:
+        await create_user_indexes()
+        await create_twitter_tts_indexes()
+        await create_predefined_voice_indexes()
+        print("All indexes created successfully")
+    except Exception as e:
+        print(f"Error creating indexes: {e}")
+
+# asyncio.run(init_indexes())

@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     REDIS_PREFIX: str = "default"
     IMAGE_TO_VIDEO_V2: str = ""
     FA_KEY: str = ""
+    
+    # TTS Provider Configuration
+    TTS_PROVIDER: str = "voice_clone"  # "openai" or "voice_clone"
+    VOICE_APPLICATION_ID: str = ""
 
     JWT_SECRET: str = ""
     JWT_EXPIRATION_TIME: int = 1  # default one day

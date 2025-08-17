@@ -8,6 +8,7 @@ from common.exceptions import CustomAgentException, ErrorCode
 from common.response import RestResponse
 from entities.bo import TwitterTTSRequestBO
 from entities.dto import TwitterTTSRequest, TwitterTTSResponse, TwitterTTSTask, TwitterTTSTaskListResponse, TwitterTTSTaskQuery
+from entities.dto import PredefinedVoice, PredefinedVoiceListResponse
 from services import twitter_tts_service
 from middleware.auth_middleware import get_current_user
 
@@ -29,6 +30,8 @@ async def create_twitter_tts_task(
     - **model**: TTS model to use (tts-1, tts-1-hd)
     - **response_format**: Audio format (mp3, opus, aac, flac)
     - **speed**: Speech speed (0.25 to 4.0)
+    - **voice_id**: Optional voice ID for TTS (optional)
+    - **audio_url**: Optional audio URL for TTS (optional)
     
     Note: Tenant ID is automatically extracted from authenticated user
     """
@@ -37,7 +40,7 @@ async def create_twitter_tts_task(
         tenant_id = user.get("tenant_id")
         if not tenant_id:
             return RestResponse(
-                code=ErrorCode.BAD_REQUEST,
+                code=ErrorCode.INVALID_PARAMETERS,
                 msg="User does not have a valid tenant ID"
             )
         
@@ -48,6 +51,8 @@ async def create_twitter_tts_task(
             model=request.model,
             response_format=request.response_format,
             speed=request.speed,
+            voice_id=request.voice_id,
+            audio_url=request.audio_url,
             tenant_id=tenant_id
         )
         
@@ -255,6 +260,65 @@ async def delete_twitter_tts_task(
         
     except Exception as e:
         logger.error(f"Unexpected error deleting Twitter TTS task: {str(e)}", exc_info=True)
+        return RestResponse(
+            code=ErrorCode.INTERNAL_ERROR,
+            msg=get_error_message(ErrorCode.INTERNAL_ERROR)
+        )
+
+
+@router.get("/api/twitter-tts/voices", response_model=RestResponse[PredefinedVoiceListResponse], summary="Get all predefined voices")
+async def get_all_predefined_voices(
+    category: Optional[str] = Query(None, description="Filter by voice category"),
+    is_active: bool = Query(True, description="Filter by active status")
+):
+    """
+    Get all predefined voices with optional filtering
+    
+    - **category**: Optional category filter (e.g., "male", "female", "child")
+    - **is_active**: Filter by active status (default: true)
+    
+    Returns a list of available voices with their names, IDs, and sample audio URLs
+    """
+    try:
+        voices, total = await twitter_tts_service.get_all_predefined_voices(category, is_active)
+        
+        response = PredefinedVoiceListResponse(
+            voices=voices,
+            total=total
+        )
+        
+        return RestResponse(data=response)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error getting predefined voices: {str(e)}", exc_info=True)
+        return RestResponse(
+            code=ErrorCode.INTERNAL_ERROR,
+            msg=get_error_message(ErrorCode.INTERNAL_ERROR)
+        )
+
+
+@router.get("/api/twitter-tts/voices/{voice_id}", response_model=RestResponse[PredefinedVoice], summary="Get predefined voice by ID")
+async def get_predefined_voice_by_id(voice_id: str):
+    """
+    Get predefined voice details by voice ID
+    
+    - **voice_id**: Unique voice identifier
+    
+    Returns detailed information about a specific voice
+    """
+    try:
+        voice = await twitter_tts_service.get_predefined_voice_by_id(voice_id)
+        
+        if not voice:
+            return RestResponse(
+                code=ErrorCode.INVALID_PARAMETERS,
+                msg="Voice not found"
+            )
+        
+        return RestResponse(data=voice)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error getting predefined voice: {str(e)}", exc_info=True)
         return RestResponse(
             code=ErrorCode.INTERNAL_ERROR,
             msg=get_error_message(ErrorCode.INTERNAL_ERROR)

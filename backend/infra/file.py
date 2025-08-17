@@ -72,6 +72,8 @@ async def upload_audio_file(audio_data: bytes, file_extension: str) -> str | Non
         Audio file URL if successful, None if failed
     """
     try:
+        if not file_extension:
+            file_extension = "mp3"
         file_uuid = str(uuid.uuid4())
         file_key = f"{file_uuid}.{file_extension}"
         

@@ -8,6 +8,7 @@ from agent.prompt.tts import TTS_PROMPT
 from entities.bo import TwitterTTSRequestBO
 from entities.dto import TwitterTTSTask, TaskStatus, TwitterTTSTaskListResponse
 from infra.db import twitter_tts_task_save, twitter_tts_task_get_by_id, twitter_tts_task_get_by_tenant, twitter_tts_task_get_pending
+from infra.db import predefined_voice_get_all, predefined_voice_get_by_id
 from clients.twitter_client import get_tweet_summary
 from clients.tts_client import text_to_speech_svc, call_model
 from infra.file import upload_audio_file
@@ -63,6 +64,8 @@ async def create_twitter_tts_task(request: TwitterTTSRequestBO) -> TwitterTTSTas
             model=request.model,
             response_format=request.response_format,
             speed=request.speed,
+            voice_id=request.voice_id,
+            audio_url_input=request.audio_url,
             status=TaskStatus.IN_PROGRESS,
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -119,14 +122,22 @@ async def process_twitter_tts_task(task: TwitterTTSTask) -> bool:
         if message and "#" in message:
             title = message.split("#")[0]
 
-        # Step 3: Generate TTS audio
-        audio_data = await text_to_speech_svc(
-            text=message,
-            voice=task.voice,
-            model=task.model,
-            response_format=task.response_format,
-            speed=task.speed
-        )
+        # Step 3: Generate TTS audio with optional parameters
+        tts_kwargs = {
+            "text": message,
+            "voice": task.voice,
+            "model": task.model,
+            "response_format": task.response_format,
+            "speed": task.speed
+        }
+        
+        # Add optional parameters if they exist
+        if task.voice_id:
+            tts_kwargs["voice_id"] = task.voice_id
+        if task.audio_url_input:
+            tts_kwargs["audio_url"] = task.audio_url_input
+            
+        audio_data = await text_to_speech_svc(**tts_kwargs)
         
         if not audio_data:
             raise Exception("TTS generation failed")
@@ -260,3 +271,38 @@ async def retry_failed_twitter_tts_task(task_id: str) -> bool:
     except Exception as e:
         logger.error(f"Error retrying Twitter TTS task {task_id}: {e}", exc_info=True)
         return False 
+
+
+async def get_all_predefined_voices(category: str = None, is_active: bool = True) -> tuple[list, int]:
+    """
+    Get all predefined voices with optional filtering
+    
+    Args:
+        category: Optional category filter
+        is_active: Filter by active status (default: True)
+        
+    Returns:
+        Tuple of (voices_list, total_count)
+    """
+    try:
+        return await predefined_voice_get_all(category, is_active)
+    except Exception as e:
+        logger.error(f"Error getting predefined voices: {e}", exc_info=True)
+        return [], 0
+
+
+async def get_predefined_voice_by_id(voice_id: str):
+    """
+    Get predefined voice by ID
+    
+    Args:
+        voice_id: Voice ID to retrieve
+        
+    Returns:
+        PredefinedVoice or None if not found
+    """
+    try:
+        return await predefined_voice_get_by_id(voice_id)
+    except Exception as e:
+        logger.error(f"Error getting predefined voice {voice_id}: {e}", exc_info=True)
+        return None 
