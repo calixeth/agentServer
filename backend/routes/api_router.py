@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from starlette.responses import Response
 
+from clients.twitter_client import twitter_fetch_user_tweets
 from common.error import raise_error
 from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
@@ -186,6 +187,15 @@ async def delete_digital_human(req: ID):
 async def get_x_user(req: Username):
     username = req.username.replace("https://x.com/", "")
     user = await twitter_fetch_user_svc(username)
+    if not user:
+        raise_error(f"User {username} not found")
+    timeline = {}
+    try:
+        ret = await twitter_fetch_user_tweets(user.data.get("rest_id"))
+        if ret.get("result", {}).get("timeline", {}):
+            timeline = ret["result"]["timeline"]
+    except Exception as err:
+        pass
     return RestResponse(data=TwitterDTO(
         name=user.data.get("core", {}).get("name"),
         screen_name=user.data.get("core", {}).get("screen_name"),
@@ -193,4 +203,5 @@ async def get_x_user(req: Username):
         profile_image_url_https=user.avatar_url,
         followers_count=user.data.get("legacy", {}).get("followers_count"),
         friends_count=user.data.get("legacy", {}).get("friends_count"),
+        timeline=timeline
     ))

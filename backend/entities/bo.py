@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,7 @@ class TwitterDTO(BaseModel):
     profile_image_url_https: str = Field(..., description="URL of the profile image in HTTPS")
     followers_count: int = Field(..., description="Number of followers")
     friends_count: int = Field(..., description="Number of accounts the user is following")
+    timeline: dict = Field(..., description="timeline posts")
 
 
 class FileBO(BaseModel):

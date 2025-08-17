@@ -26,6 +26,17 @@ async def twitter_fetch_user(username: str):
 
     return None
 
+async def twitter_fetch_user_tweets(id: str):
+    url = f"{host}/user-tweets?user={id}&count=10"
+    logger.info(f"Fetching {url}")
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status == 200:
+                return await response.json()
+
+    return {}
+
 
 async def twitter_fetch_tweet_details(pid: str):
     """
