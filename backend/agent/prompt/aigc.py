@@ -3,11 +3,11 @@ Anime style, highly detailed, clean sharp line art, vibrant colors, neat shadows
 """
 
 GEN_COVER_IMG_PROMPT = """\
-Use Image 1 as a reference to generate an image based on Image 2, with the following requirements:
-The metallic frame must be complete, and the background behind the frame should be pure black.
-The portrait must be symmetrical and centered in composition.
-At the bottom, add the text 'KOLI' in metallic Gothic-style font.
-The portrait should have spacing from the top edge of the image, ensuring the hair is fully visible.
+Generate a new 512px * 768px image based on the provided reference, featuring a centered frontal head-and-shoulders portrait, looking directly at the camera, with a naturally restrained expression. Use soft, cinematic lighting, high resolution, and a professional illustration texture.
+Place a polished silver brushed-metal ring behind the character (thick, beveled edges, inner shadow, strong three-dimensional effect), with a pure black background behind the ring.
+The figure should “diagonally pierce” through the ring from the foreground at a slight angle: the shoulders and upper arms crossing the ring’s edge, creating a clear occlusion (the figure in front, the ring behind). The upper body remains partly outside the ring, while the head is mostly inside.
+Leave blank space above the head, ensure the hair is fully visible, maintain symmetrical composition, and keep edges clean with no noise or extra elements.
+At the bottom of the ring, centered, add embossed Gothic metallic text “KOLI” in brushed silver (beveled, volumetric, with fine shadows and sharp edges).
 """
 
 VIDEO_ANGRY_PROMPY = """\
@@ -31,6 +31,10 @@ It stands like a professional TV news anchor, completely still, with no movement
 """
 
 VIDEO_DEFAULT_PROMPY = """\
-Smiling gracefully, it sways gently from side to side with very small movements. After a moment, it rests one hand on the chin, maintaining a subtle, reserved smile.
+Walk steadily forward facing the camera, then stop and place both hands on the hips with a confident smile. Maintain a pure deep black background and a fixed camera angle throughout.
 """
 
+
+VIDEO_THINK_PROMPY = """\
+The character’s mouth does not speak and makes no movements. The background remains pure black throughout. When asked a difficult question, the character performs a thinking gesture, and after a brief moment, comes up with the answer.
+"""

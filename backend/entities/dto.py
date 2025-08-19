@@ -77,6 +77,7 @@ class VideoKeyType(StrEnum):
     DANCE = "dance"
     ANGRY = "angry"
     DEFAULT = "default"
+    THINK = "think"
 
 
 class GenVideoReq(BaseModel):

@@ -6,11 +6,10 @@ import uuid
 from fastapi import BackgroundTasks
 
 from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
-    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY, GEN_FRAME_IMG_PROMPT
+    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY, GEN_FRAME_IMG_PROMPT, VIDEO_THINK_PROMPY
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
-from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
+from clients.openai_gen_img import openai_gen_img_svc
 from common.error import raise_error
-from config import SETTINGS
 from entities.bo import TwitterBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp
@@ -85,9 +84,8 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
     first_frame_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
                                                prompt=GEN_FRAME_IMG_PROMPT)
-    cover_imgs_task = openai_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400,
-                                                    SETTINGS.GEN_T_URL],
-                                          prompt=GEN_COVER_IMG_PROMPT)
+    cover_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
+                                         prompt=GEN_COVER_IMG_PROMPT)
 
     first_frame_imgs, cover_imgs = await asyncio.gather(
         first_frame_imgs_task,
@@ -133,7 +131,9 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         prompt = VIDEO_ANGRY_PROMPY
     elif VideoKeyType.SAYING == req.key:
         prompt = VIDEO_SAYING_PROMPY
-    elif VideoKeyType.DEFAULT == req.key:
+    elif VideoKeyType.THINK == req.key:
+        prompt = VIDEO_THINK_PROMPY
+    else:
         prompt = VIDEO_DEFAULT_PROMPY
 
     data = await veo3_gen_video_svc_v2(task.cover.output.first_frame_img_url, prompt)

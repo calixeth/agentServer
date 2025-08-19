@@ -1,11 +1,9 @@
 import logging
 import re
 
-from entities import bo
-from infra.db import twitter_user_col
-from infra.file import img_url_to_base64
 from clients.twitter_client import twitter_fetch_user
 from entities.bo import TwitterBO
+from infra.db import twitter_user_col
 
 
 async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
@@ -14,7 +12,11 @@ async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
         logging.info(f"Cached user {username}")
         return await _fill(TwitterBO(**ret))
 
-    user = await twitter_fetch_user(username)
+    user = None
+    try:
+        user = await twitter_fetch_user(username)
+    except Exception as ex:
+        logging.error(f"Failed to fetch user {username}: {ex}")
     if not isinstance(user, dict):
         logging.info(f"User {username} not found")
         return None

@@ -21,6 +21,7 @@ async def twitter_fetch_user(username: str):
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as response:
+            response.raise_for_status()
             if response.status == 200:
                 return await response.json()
 
