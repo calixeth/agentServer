@@ -12,7 +12,7 @@ from clients.openai_gen_img import openai_gen_img_svc
 from common.error import raise_error
 from entities.bo import TwitterBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
-    DigitalVideo, GenCoverResp
+    DigitalVideo, GenCoverResp, AIGCPublishReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services.twitter_service import twitter_fetch_user_svc
@@ -149,8 +149,8 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         await aigc_task_save(cur_task)
 
 
-async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
-    task: AIGCTask = await aigc_task_get_by_id(task_id)
+async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
+    task: AIGCTask = await aigc_task_get_by_id(req.task_id)
     if not task:
         raise_error("task not found")
 
@@ -187,6 +187,19 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
     else:
         created_at = org.created_at
 
+    description = ""
+    if req.description:
+        description = req.description
+    elif org and org.description:
+        description = org.description
+    else:
+        try:
+            user = await twitter_fetch_user_svc(username)
+            if user:
+                description = user.data.get("legacy", {}).get("description")
+        except Exception:
+            pass
+
     bo = DigitalHuman(
         id=id,
         from_task_id=task.task_id,
@@ -196,6 +209,10 @@ async def aigc_task_publish_by_id(task_id: str) -> DigitalHuman:
         videos=videos,
         updated_at=datetime.datetime.now(),
         created_at=created_at,
+        mp3_url=req.mp3_url,
+        x_tts_urls=req.x_tts_urls,
+        gender=req.gender,
+        description=description,
     )
 
     await digital_human_save(bo)

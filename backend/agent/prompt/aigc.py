@@ -3,10 +3,10 @@ Anime style, highly detailed, clean sharp line art, vibrant colors, neat shadows
 """
 
 GEN_COVER_IMG_PROMPT = """\
-Generate a new 512px * 768px image based on the provided reference, featuring a centered frontal head-and-shoulders portrait, looking directly at the camera, with a naturally restrained expression. Use soft, cinematic lighting, high resolution, and a professional illustration texture.
-Place a polished silver brushed-metal ring behind the character (thick, beveled edges, inner shadow, strong three-dimensional effect), with a pure black background behind the ring.
-The figure should “diagonally pierce” through the ring from the foreground at a slight angle: the shoulders and upper arms crossing the ring’s edge, creating a clear occlusion (the figure in front, the ring behind). The upper body remains partly outside the ring, while the head is mostly inside.
-Leave blank space above the head, ensure the hair is fully visible, maintain symmetrical composition, and keep edges clean with no noise or extra elements.
+Generate a new 512px * 768px image based on the provided reference, showing a centered, frontal head-and-shoulders portrait, looking directly at the camera with a natural expression. Use soft cinematic lighting, high resolution, and a professional illustration texture.
+Place a polished silver brushed-metal ring behind the figure (thick, beveled edges, inner shadow, strong three-dimensional effect). The ring should be complete, with a pure black background.
+The figure should “diagonally pierce” through the ring from the foreground at a slight angle: the shoulders and upper arms crossing the ring’s edge, creating a clear occlusion (figure in front, ring behind). The upper body remains partly outside the ring, while the head is mostly inside.
+The lower body and arms should not extend beyond the ring. Leave blank space above the head, ensure the hair is fully visible, keep the composition symmetrical, with clean edges, no noise, and no extra elements.
 At the bottom of the ring, centered, add embossed Gothic metallic text “KOLI” in brushed silver (beveled, volumetric, with fine shadows and sharp edges).
 """
 

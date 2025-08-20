@@ -14,6 +14,11 @@ class TaskStatus(StrEnum):
     FAILED = "failed"
 
 
+class Gender(StrEnum):
+    MALE = "0"
+    FEMALE = "1"
+
+
 class SubTask(BaseModel):
     sub_task_id: str = Field(description="sub_task_id")
     status: TaskStatus = Field(description="status", default=TaskStatus.IN_PROGRESS)
@@ -44,6 +49,16 @@ class AIGCTaskID(BaseModel):
     task_id
     """
     task_id: str = Field(description="task_id", default=None)
+
+
+class AIGCPublishReq(BaseModel):
+    """
+    """
+    task_id: str = Field(description="task_id")
+    gender: Gender = Field(description="gender")
+    description: str = Field(description="description", default="")
+    mp3_url: str = Field(description="mp3 url", default="")
+    x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
 
 
 class ID(BaseModel):
@@ -231,3 +246,7 @@ class DigitalHuman(BaseModel):
     username: str = Field(description="username")
     cover_img: str = Field(description="cover_img")
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
+    gender: Gender = Field(description="gender")
+    description: str = Field(description="description", default="")
+    mp3_url: str = Field(description="mp3 url", default="")
+    x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
