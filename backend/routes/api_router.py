@@ -130,8 +130,12 @@ async def list_aigc_task(
              summary="aigc_task/publish_digital_human",
              response_model=RestResponse[DigitalHuman]
              )
-async def get_aigc_publish(req: AIGCPublishReq):
-    ret = await aigc_task_publish_by_id(req)
+async def get_aigc_publish(req: AIGCPublishReq,
+                           background_tasks: BackgroundTasks,
+                           user: Optional[dict] = Depends(get_optional_current_user),
+                           ):
+    ret = await aigc_task_publish_by_id(req, user, background_tasks)
+
     return RestResponse(data=ret)
 
 

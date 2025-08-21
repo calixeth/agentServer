@@ -10,12 +10,13 @@ from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GO
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
 from clients.openai_gen_img import openai_gen_img_svc
 from common.error import raise_error
-from entities.bo import TwitterBO, Country
+from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services.twitter_service import twitter_fetch_user_svc
+from services.twitter_tts_service import create_twitter_tts_task
 
 
 async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) -> AIGCTask:
@@ -149,7 +150,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         await aigc_task_save(cur_task)
 
 
-async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
+async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, background: BackgroundTasks) -> DigitalHuman:
     task: AIGCTask = await aigc_task_get_by_id(req.task_id)
     if not task:
         raise_error("task not found")
@@ -219,4 +220,21 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
     )
 
     await digital_human_save(bo)
+
+    background.add_task(voice_ttl_task, req, user_dict, username)
     return bo
+
+
+async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str):
+    tenant_id = user.get("tenant_id")
+    voice_id = req.voice_id or "Abbess"
+
+    for twitter_url in req.x_tts_urls:
+        request_bo = TwitterTTSRequestBO(
+            twitter_url=twitter_url,
+            voice_id=voice_id,
+            username=username,
+            tenant_id=tenant_id,
+            audio_url=None
+        )
+        await create_twitter_tts_task(request_bo)

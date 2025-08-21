@@ -60,6 +60,7 @@ class AIGCPublishReq(BaseModel):
     description: str = Field(description="description", default="")
     mp3_url: str = Field(description="mp3 url", default="")
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
+    voice_id: str = Field(description="voice_id", default="Abbess")
 
 
 class ID(BaseModel):
