@@ -1,9 +1,17 @@
-from typing import Optional, List
+from enum import StrEnum
+from typing import Optional
 
 from pydantic import BaseModel, Field
-from dataclasses import dataclass
 
 from entities.enums import ChainType
+
+
+class Country(StrEnum):
+    USA = 'USA'
+    UK = 'UK'
+    JP = 'JP'
+    KR = 'KR'
+    CN = 'CN'
 
 
 class TwitterBO(BaseModel):
@@ -13,6 +21,8 @@ class TwitterBO(BaseModel):
     avatar_url: str = ""
     avatar_url_400x400: str = ""
     avatar_base64: str = ""
+    description: str = ""
+    country: Country = None
 
 
 class TwitterDTO(BaseModel):

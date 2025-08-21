@@ -6,6 +6,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from common.error import raise_error
+from entities.bo import Country
 
 
 class TaskStatus(StrEnum):
@@ -252,3 +253,4 @@ class DigitalHuman(BaseModel):
     description: str = Field(description="description", default="")
     mp3_url: str = Field(description="mp3 url", default="")
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
+    country: Country = Field(description="country")

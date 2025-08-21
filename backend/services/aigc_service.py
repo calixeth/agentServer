@@ -10,7 +10,7 @@ from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GO
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
 from clients.openai_gen_img import openai_gen_img_svc
 from common.error import raise_error
-from entities.bo import TwitterBO
+from entities.bo import TwitterBO, Country
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
@@ -188,6 +188,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
         created_at = org.created_at
 
     description = ""
+    country = Country.USA
     if req.description:
         description = req.description
     elif org and org.description:
@@ -197,6 +198,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
             user = await twitter_fetch_user_svc(username)
             if user:
                 description = user.data.get("legacy", {}).get("description")
+                country = user.country
         except Exception:
             pass
 
@@ -213,6 +215,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq) -> DigitalHuman:
         x_tts_urls=req.x_tts_urls,
         gender=req.gender,
         description=description,
+        country=country,
     )
 
     await digital_human_save(bo)

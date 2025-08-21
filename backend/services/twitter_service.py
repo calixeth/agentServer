@@ -1,8 +1,9 @@
+import json
 import logging
 import re
 
-from clients.twitter_client import twitter_fetch_user
-from entities.bo import TwitterBO
+from clients.twitter_client import twitter_fetch_user, twitter_fetch_user_tweets
+from entities.bo import TwitterBO, Country
 from infra.db import twitter_user_col
 
 
@@ -49,9 +50,22 @@ async def _fill(bo: TwitterBO) -> TwitterBO:
             bo.avatar_url_400x400 = convert_twitter_avatar_to_400(bo.avatar_url)
             changed = True
 
-    # if not bo.avatar_base64:
-    #     bo.avatar_base64 = await img_url_to_base64(bo.avatar_url)
-    #     changed = True
+    if not bo.description:
+        bo.description = bo.data.get("legacy", {}).get("description", "")
+        changed = True
+    if not bo.country:
+        text = bo.description
+
+        try:
+            ret = await twitter_fetch_user_tweets(bo.data.get("rest_id"))
+            text += json.dumps(ret, ensure_ascii=False)
+        except Exception as ex:
+            pass
+        match = re.search(r'[\u4e00-\u9fff]', text)
+        if match:
+            bo.country = Country.CN
+        else:
+            bo.country = Country.USA
 
     if changed:
         await _save(bo)
