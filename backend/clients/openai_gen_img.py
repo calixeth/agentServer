@@ -30,7 +30,7 @@ async def openai_gen_img_svc(img_url: str, prompt: str) -> ImagesResponse | None
 
         return ret
     except Exception as e:
-        logging.error(f"openai_gen_img_svc error: {e}", exc_info=True)
+        logging.error(f"openai_gen_img_svc url={img_url} prompt={prompt} error: {e}", exc_info=True)
     return None
 
 
