@@ -32,6 +32,7 @@ async def create_twitter_tts_task(
     - **speed**: Speech speed (0.25 to 4.0)
     - **voice_id**: Optional voice ID for TTS (optional)
     - **audio_url**: Optional audio URL for TTS (optional)
+    - **username**: Optional username for the TTS task (optional)
     
     Note: Tenant ID is automatically extracted from authenticated user
     """
@@ -53,6 +54,7 @@ async def create_twitter_tts_task(
             speed=request.speed,
             voice_id=request.voice_id,
             audio_url=request.audio_url,
+            username=request.username,
             tenant_id=tenant_id
         )
         
@@ -108,7 +110,7 @@ async def get_twitter_tts_task(
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
             return RestResponse(
-                code=ErrorCode.FORBIDDEN,
+                code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
         
@@ -130,7 +132,8 @@ async def get_twitter_tts_tasks(
     user: dict = Depends(get_current_user),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
-    status: Optional[str] = Query(None, description="Filter by status (in_progress, done, failed)")
+    status: Optional[str] = Query(None, description="Filter by status (in_progress, done, failed)"),
+    username: Optional[str] = Query(None, description="Filter by username")
 ):
     """
     Get Twitter TTS tasks for the authenticated user's tenant with pagination
@@ -138,6 +141,7 @@ async def get_twitter_tts_tasks(
     - **page**: Page number (starts from 1)
     - **page_size**: Number of tasks per page (1-100)
     - **status**: Optional status filter
+    - **username**: Optional username filter
     
     Note: Tenant ID is automatically extracted from authenticated user
     """
@@ -146,7 +150,7 @@ async def get_twitter_tts_tasks(
         tenant_id = user.get("tenant_id")
         if not tenant_id:
             return RestResponse(
-                code=ErrorCode.BAD_REQUEST,
+                code=ErrorCode.AUTH_ERROR,
                 msg="User does not have a valid tenant ID"
             )
         
@@ -154,7 +158,8 @@ async def get_twitter_tts_tasks(
             tenant_id=tenant_id,
             page=page,
             page_size=page_size,
-            status=status
+            status=status,
+            username=username
         )
         
         return RestResponse(data=result)
@@ -194,7 +199,7 @@ async def retry_twitter_tts_task(
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
             return RestResponse(
-                code=ErrorCode.FORBIDDEN,
+                code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
         
@@ -207,7 +212,7 @@ async def retry_twitter_tts_task(
             )
         else:
             return RestResponse(
-                code=ErrorCode.BAD_REQUEST,
+                code=ErrorCode.INTERNAL_ERROR,
                 msg="Failed to retry task. Task may not exist or not in failed status."
             )
             
@@ -246,7 +251,7 @@ async def delete_twitter_tts_task(
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
             return RestResponse(
-                code=ErrorCode.FORBIDDEN,
+                code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
         

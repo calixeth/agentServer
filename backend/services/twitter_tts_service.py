@@ -66,6 +66,7 @@ async def create_twitter_tts_task(request: TwitterTTSRequestBO) -> TwitterTTSTas
             speed=request.speed,
             voice_id=request.voice_id,
             audio_url_input=request.audio_url,
+            username=request.username,
             status=TaskStatus.IN_PROGRESS,
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -193,7 +194,8 @@ async def get_twitter_tts_tasks_by_tenant(
     tenant_id: str, 
     page: int = 1, 
     page_size: int = 20, 
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    username: Optional[str] = None
 ) -> TwitterTTSTaskListResponse:
     """
     Get Twitter TTS tasks by tenant with pagination
@@ -203,12 +205,13 @@ async def get_twitter_tts_tasks_by_tenant(
         page: Page number
         page_size: Page size
         status: Optional status filter
+        username: Optional username filter
         
     Returns:
         TwitterTTSTaskListResponse
     """
     try:
-        tasks, total = await twitter_tts_task_get_by_tenant(tenant_id, page, page_size, status)
+        tasks, total = await twitter_tts_task_get_by_tenant(tenant_id, page, page_size, status, username)
         
         return TwitterTTSTaskListResponse(
             tasks=tasks,

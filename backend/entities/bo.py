@@ -62,3 +62,4 @@ class TwitterTTSRequestBO(BaseModel):
     tenant_id: str = Field(description="Tenant ID")
     voice_id: Optional[str] = Field(description="Voice ID")
     audio_url: Optional[str] = Field(description="Audio URL")
+    username: Optional[str] = Field(default=None, description="Username for the TTS task")

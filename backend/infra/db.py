@@ -76,7 +76,7 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None) -> \
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, username: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size
@@ -85,6 +85,8 @@ async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_siz
     query = {"tenant_id": tenant_id}
     if status:
         query["status"] = status
+    if username:
+        query["username"] = username
     
     # Get total count
     total = await twitter_tts_task_col.count_documents(query)
@@ -174,6 +176,7 @@ async def create_twitter_tts_indexes():
         await twitter_tts_task_col.create_index("status")
         await twitter_tts_task_col.create_index("created_at")
         await twitter_tts_task_col.create_index("tweet_id")
+        await twitter_tts_task_col.create_index("username")
         print("Twitter TTS task indexes created successfully")
     except Exception as e:
         print(f"Error creating Twitter TTS task indexes: {e}")

@@ -133,6 +133,7 @@ class TwitterTTSRequest(BaseModel):
     speed: Optional[float] = Field(default=None, description="Speech speed")
     voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
     audio_url: Optional[str] = Field(default=None, description="Optional audio URL for TTS")
+    username: Optional[str] = Field(default=None, description="Username for the TTS task")
 
 
 class TwitterTTSResponse(BaseModel):
@@ -163,6 +164,7 @@ class TwitterTTSTask(BaseModel):
     error_message: str | None = Field(description="Error message if failed", default=None)
     processing_started_at: datetime.datetime | None = Field(description="Processing start time", default=None)
     completed_at: datetime.datetime | None = Field(description="Completion time", default=None)
+    username: Optional[str] = Field(default=None, description="Username for the TTS task")
 
 
 class TwitterTTSTaskListResponse(BaseModel):

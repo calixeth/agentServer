@@ -23,6 +23,8 @@ class ErrorCode(IntEnum):
     INVALID_CREDENTIALS = 10302
     INVALID_EMAIL = 10303
 
+    NOT_FOUND = 10400
+
 
 class CustomAgentException(Exception):
     """Custom exception for agent-related errors."""
