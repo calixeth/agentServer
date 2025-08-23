@@ -5,8 +5,8 @@ import uuid
 
 from fastapi import BackgroundTasks
 
-from agent.prompt.aigc import GEN_COVER_IMG_PROMPT, VIDEO_DANCE_PROMPY, VIDEO_GOGO_PROMPY, VIDEO_TURN_PROMPY, \
-    VIDEO_ANGRY_PROMPY, VIDEO_SAYING_PROMPY, VIDEO_DEFAULT_PROMPY, GEN_FRAME_IMG_PROMPT, VIDEO_THINK_PROMPY
+from agent.prompt.aigc import COVER_IMG_PROMPT, V_DANCE_PROMPT, V_GOGO_PROMPT, V_TURN_PROMPT, \
+    V_ANGRY_PROMPT, V_SAYING_PROMPT, V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT
 from clients.gen_video_v2 import veo3_gen_video_svc_v2
 from clients.openai_gen_img import openai_gen_img_svc
 from common.error import raise_error
@@ -84,9 +84,9 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
     first_frame_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
-                                               prompt=GEN_FRAME_IMG_PROMPT)
+                                               prompt=FIRST_FRAME_IMG_PROMPT)
     cover_imgs_task = openai_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
-                                         prompt=GEN_COVER_IMG_PROMPT)
+                                         prompt=COVER_IMG_PROMPT)
 
     first_frame_imgs, cover_imgs = await asyncio.gather(
         first_frame_imgs_task,
@@ -123,19 +123,19 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
 
     prompt = ""
     if VideoKeyType.DANCE == req.key:
-        prompt = VIDEO_DANCE_PROMPY
+        prompt = V_DANCE_PROMPT
     elif VideoKeyType.GOGO == req.key:
-        prompt = VIDEO_GOGO_PROMPY
+        prompt = V_GOGO_PROMPT
     elif VideoKeyType.TURN == req.key:
-        prompt = VIDEO_TURN_PROMPY
+        prompt = V_TURN_PROMPT
     elif VideoKeyType.ANGRY == req.key:
-        prompt = VIDEO_ANGRY_PROMPY
+        prompt = V_ANGRY_PROMPT
     elif VideoKeyType.SAYING == req.key:
-        prompt = VIDEO_SAYING_PROMPY
+        prompt = V_SAYING_PROMPT
     elif VideoKeyType.THINK == req.key:
-        prompt = VIDEO_THINK_PROMPY
+        prompt = V_THINK_PROMPT
     else:
-        prompt = VIDEO_DEFAULT_PROMPY
+        prompt = V_DEFAULT_PROMPT
 
     data = await veo3_gen_video_svc_v2(task.cover.output.first_frame_img_url, prompt)
     cur_task = await aigc_task_get_by_id(task.task_id)
