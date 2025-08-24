@@ -1,39 +1,31 @@
 FIRST_FRAME_IMG_PROMPT = """\
-Generate a 3D cartoon Pixar-style exaggerated character (full-body portrait) based on the provided image, both funny and romantic, with sparkling eyes, creating a playful and humorous atmosphere. Highly detailed, clean sharp line art, vibrant colors. Full-body standing portrait, 512px * 768px, front-facing, looking at camera. The entire head and hair must be fully visible inside the frame, with generous space above the head to avoid cutting. Composition should be symmetrical and centered. Clear details preserved: original facial features, hairstyle, expression, body proportions, and clothing. Pure black background, no borders, no text.
+Generate a 3D cartoon Pixar-style exaggerated character (full-body portrait) based on the provided image, both funny and romantic, with sparkling eyes, creating a playful and humorous atmosphere. Highly detailed, clean sharp line art, vibrant colors. Full-body standing portrait, width: 1000px, height: 1500px, front-facing, looking at camera. The entire head and hair must be fully visible inside the frame, with generous space above the head to avoid cutting. Composition should be symmetrical and centered. Clear details preserved: original facial features, hairstyle, expression, body proportions, and clothing. Pure black background, no borders, no text.
 """
 
-COVER_IMG_PROMPT = """\
-Generate a new 512px * 768px image based on the provided reference, showing a centered, frontal head-and-shoulders portrait, looking directly at the camera with a natural expression. Use soft cinematic lighting, high resolution, and a professional illustration texture.
-Place a polished silver brushed-metal ring behind the figure (thick, beveled edges, inner shadow, strong three-dimensional effect). The ring should be complete, with a pure black background.
-The figure should “diagonally pierce” through the ring from the foreground at a slight angle: the shoulders and upper arms crossing the ring’s edge, creating a clear occlusion (figure in front, ring behind). The upper body remains partly outside the ring, while the head is mostly inside.
-The lower body and arms should not extend beyond the ring. Leave blank space above the head, ensure the hair is fully visible, keep the composition symmetrical, with clean edges, no noise, and no extra elements.
-At the bottom of the ring, centered, add embossed Gothic metallic text “KOLI” in brushed silver (beveled, volumetric, with fine shadows and sharp edges).
-"""
-
-V_ANGRY_PROMPT = """\
-It puts both hands on its hips, shouting, “Hmph, I’m very angry,” with a slightly angry expression. Video background in pure black.
-"""
-
-V_GOGO_PROMPT = """\
-It cheers for the audience in front of the camera, shouting excitedly, “Come on, come on, you can do it!”. Video background in pure black.
-"""
-
-V_DANCE_PROMPT = """\
-It performs a hip-hop dance with natural movements, without any mouth movements for speech, immersed in a solo performance. Video background in pure black.
-"""
-
-V_TURN_PROMPT = """\
-It turns to the right in a full 360-degree spin, then returns to face the camera, with minimal movement range. Video background in pure black.
-"""
-
-V_SAYING_PROMPT = """\
-It stands like a professional TV news anchor, completely still, with no movement in the shoulders, torso, or head. Hands are raised in front of the chest, with minimal small gestures. Eyes look straight ahead, not sideways. Hands never go above the neck. It delivers the latest news quickly and fluently, with a natural expression, speaking at a fast and continuous pace, without any pauses.Video background in pure black.
+V_SPEECH_PROMPT = """\
+It stands like a professional TV news anchor, completely still, with no movement in the shoulders, torso, or head. Hands are raised in front of the chest, with minimal small gestures. Eyes look straight ahead, not sideways. Hands never go above the neck. It delivers the latest news quickly and fluently, with a natural expression, speaking at a fast and continuous pace, without any pauses.Video background in pure black.nagative:blur, distort, and low quality,Facial distortion
 """
 
 V_THINK_PROMPT = """\
-The character’s mouth does not speak or make any movements. The background remains pure black throughout. When suddenly asked a difficult question, the character performs a thinking gesture, pauses briefly, and then gives the answer.
+The character’s mouth does not speak or make any movements. The background remains pure black throughout. When suddenly asked a difficult question, the character performs a thinking gesture, pauses briefly, and then gives the answer.nagative:blur, distort, and low quality,Facial distortion
 """
 
 V_DEFAULT_PROMPT = """\
-Walk steadily forward facing the camera, then stop and place both hands on the hips with a confident smile. Maintain a pure deep black background and a fixed camera angle throughout.
+The character looks straight ahead, maintaining a slight, reserved smile, with a pure black background behind them.nagative:blur, distort, and low quality,Facial distortion
 """
+
+V_DANCE_IMAGE_PROMPT = """\
+Replace the frog’s head and hands with the reference person’s portrait I provided. The target image should be high-definition, highly detailed, and seamlessly realistic, with no sense of discord. Width: 1000px, height: 1000px.
+"""
+
+V_DANCE_VIDEO_PROMPT = """\
+A group of dancers performs in synchronized hip-hop poses, maintaining natural animal body proportions with realistic textures. Their full bodies are shown, dressed in stylish Korean streetwear designed to fit their forms, including modified loose street pants, cropped jackets, oversized hoodies, and sneakers on their feet. Accessories include baseball caps and necklaces. Their eyes convey the spirit of dancers, with natural hair shading and realistic beards. The dance movements are dynamic and full of energy. The scene takes place on a bustling urban street with graffiti walls and neon lights, rendered with cinematic depth of field and ultra-realistic photographic detail.
+nagative:blur, distort, and low quality,Facial distortion"""
+
+V_SING_IMAGE_PROMPT = """\
+Replace the rock character’s head in Image 2 with the portrait from Image 1 to generate a high-definition 3D image, width: 1000px, height: 1500px. The character’s face, hair, and expression should be rendered in high detail, with an exaggerated expression (referencing the expression in Image 2). The clothing should also be modified according to the character’s gender.
+"""
+
+V_SING_VIDEO_PROMPT = """\
+He stands onstage roaring, muscles tensed, gripping a black Explorer guitar with lightning patterns etched into its body. His hair whips around under the searing white spotlights, partly obscuring his face. His eyes blaze with the righteous fury of thrash metal. His microphone stand is forged from twisted steel and broken stage rails, wrapped in colored electrical tape and guitar picks left from hundreds of battles. Behind him, an enormous wall of amps glows like a power plant—stacked Marshall heads spitting sparks from their edges. Flames lick the edge of the stage, while the crowd surges like an ocean of raised fists and devil horns. Atmosphere: it feels like a battlefield of sound. Pick-shaped lightning crackles in the air. The air is thick with smoke, sweat, and the scent of metal. Hetfield is captured mid-roar, mouth wide open, ready to unleash a verse that could shatter the earth.
+nagative:blur, distort, and low quality,Facial distortion"""

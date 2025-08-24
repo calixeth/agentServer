@@ -100,8 +100,10 @@ class Username(BaseModel):
 
 
 class GenCoverResp(BaseModel):
-    first_frame_img_url: str = Field(description="first_frame_url")
-    cover_img_url: str = Field(description="cover_url")
+    first_frame_img_url: str = Field(description="first_frame_url", default="")
+    cover_img_url: str = Field(description="cover_url", default="")
+    dance_first_frame_img_url: str = Field(description="dance_first_frame_img_url", default="")
+    sing_first_frame_img_url: str = Field(description="sing_first_frame_img_url", default="")
 
 
 class Cover(SubTask):
@@ -117,6 +119,8 @@ class VideoKeyType(StrEnum):
     ANGRY = "angry"
     DEFAULT = "default"
     THINK = "think"
+    SING = "sing"
+    SPEECH = "speech"
 
 
 class GenVideoReq(BaseModel):
@@ -159,7 +163,8 @@ class TwitterTTSRequest(BaseModel):
     voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
     audio_url: Optional[str] = Field(default=None, description="Optional audio URL for TTS")
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
-    style: Optional[str] = Field(default=None, description="Music style for music generation tasks (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
+    style: Optional[str] = Field(default=None,
+                                 description="Music style for music generation tasks (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
 
 
 class TwitterTTSResponse(BaseModel):

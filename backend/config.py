@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_PREFIX: str = "default"
     IMAGE_TO_VIDEO_V2: str = ""
+    IMAGE_TO_VIDEO_V3: str = ""
+    IMAGE_TO_IMAGE_V3: str = ""
+    GEN_T_URL_DANCE: str = ""
+    GEN_T_URL_SING: str = ""
     FA_KEY: str = ""
     
     # TTS Provider Configuration
