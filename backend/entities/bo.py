@@ -65,6 +65,7 @@ class WalletLoginRequest(BaseModel):
 class TwitterTTSRequestBO(BaseModel):
     """Business object for Twitter TTS request"""
     twitter_url: str = Field(description="Twitter/X post URL")
+    task_type: str = Field(default="tts", description="Task type (tts, voice_clone, music_gen)")
     voice: str | None = Field(default=None, description="TTS voice to use")
     model: str | None = Field(default=None, description="TTS model to use")
     response_format: str | None = Field(default=None, description="Audio format")
@@ -73,3 +74,4 @@ class TwitterTTSRequestBO(BaseModel):
     voice_id: Optional[str] = Field(description="Voice ID")
     audio_url: Optional[str] = Field(description="Audio URL")
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
+    style: Optional[str] = Field(default=None, description="Music style for music generation tasks")

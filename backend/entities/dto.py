@@ -15,6 +15,28 @@ class TaskStatus(StrEnum):
     FAILED = "failed"
 
 
+class TaskType(StrEnum):
+    """Task type for Twitter TTS tasks"""
+    TTS = "tts"  # Text-to-Speech (default)
+    VOICE_CLONE = "voice_clone"  # Voice cloning
+    MUSIC_GEN = "music_gen"  # Music generation
+
+
+class MusicStyle(StrEnum):
+    """Music style for music generation tasks"""
+    POP = "pop"  # Pop music
+    ROCK = "rock"  # Rock music
+    JAZZ = "jazz"  # Jazz music
+    CLASSICAL = "classical"  # Classical music
+    ELECTRONIC = "electronic"  # Electronic music
+    FOLK = "folk"  # Folk music
+    BLUES = "blues"  # Blues music
+    COUNTRY = "country"  # Country music
+    HIP_HOP = "hip_hop"  # Hip hop music
+    AMBIENT = "ambient"  # Ambient music
+    CUSTOM = "custom"  # Custom style
+
+
 class Gender(StrEnum):
     MALE = "0"
     FEMALE = "1"
@@ -129,6 +151,7 @@ class AIGCTask(BaseModel):
 class TwitterTTSRequest(BaseModel):
     """Request model for creating Twitter TTS task"""
     twitter_url: str = Field(description="Twitter/X post URL")
+    task_type: Optional[TaskType] = Field(default=TaskType.TTS, description="Task type (tts, voice_clone, music_gen)")
     voice: Optional[str] = Field(default=None, description="TTS voice to use")
     model: Optional[str] = Field(default=None, description="TTS model to use")
     response_format: Optional[str] = Field(default=None, description="Audio format")
@@ -136,6 +159,7 @@ class TwitterTTSRequest(BaseModel):
     voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
     audio_url: Optional[str] = Field(default=None, description="Optional audio URL for TTS")
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
+    style: Optional[str] = Field(default=None, description="Music style for music generation tasks (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
 
 
 class TwitterTTSResponse(BaseModel):
@@ -151,6 +175,7 @@ class TwitterTTSTask(BaseModel):
     tenant_id: str = Field(description="Tenant ID")
     twitter_url: str = Field(description="Twitter/X post URL")
     tweet_id: str = Field(description="Extracted tweet ID")
+    task_type: TaskType = Field(default=TaskType.TTS, description="Task type (tts, voice_clone, music_gen)")
     voice: Optional[str] = Field(description="TTS voice")
     model: Optional[str] = Field(description="TTS model")
     response_format: Optional[str] = Field(description="Audio format")
@@ -167,6 +192,7 @@ class TwitterTTSTask(BaseModel):
     processing_started_at: datetime.datetime | None = Field(description="Processing start time", default=None)
     completed_at: datetime.datetime | None = Field(description="Completion time", default=None)
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
+    style: Optional[str] = Field(default=None, description="Music style for music generation tasks")
 
 
 class TwitterTTSTaskListResponse(BaseModel):

@@ -37,3 +37,18 @@ Based on this content, create **one** integrated Chinese short-video script (abo
   4. **Closing** (call to action + next point/indicator, include “DYOR, not financial advice”)
 
 """
+
+SONG_PROMPT = \
+"""
+You are a lyricist. Create an original Web3-themed song lyric inspired by the style of {style} and the following reference content:
+{content}
+
+Formatting rules (STRICT):
+
+* Use a newline to separate each line of lyrics.
+* Use two newlines to add a pause between lines.
+* To add accompaniment, enclose the lyric line with double hash marks (`##` at the beginning and end).
+* Maximum 600 characters.
+
+Output ONLY the lyric text.
+"""

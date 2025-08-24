@@ -76,7 +76,7 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, username: str = None) -> \
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, task_type: str = None, style: str = None, username: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size
@@ -85,6 +85,10 @@ async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_siz
     query = {"tenant_id": tenant_id}
     if status:
         query["status"] = status
+    if task_type:
+        query["task_type"] = task_type
+    if style:
+        query["style"] = style
     if username:
         query["username"] = username
     
@@ -174,6 +178,8 @@ async def create_twitter_tts_indexes():
         await twitter_tts_task_col.create_index("task_id", unique=True)
         await twitter_tts_task_col.create_index("tenant_id")
         await twitter_tts_task_col.create_index("status")
+        await twitter_tts_task_col.create_index("task_type")
+        await twitter_tts_task_col.create_index("style")
         await twitter_tts_task_col.create_index("created_at")
         await twitter_tts_task_col.create_index("tweet_id")
         await twitter_tts_task_col.create_index("username")

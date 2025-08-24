@@ -26,13 +26,15 @@ async def create_twitter_tts_task(
     Create a new Twitter TTS task
     
     - **twitter_url**: Twitter/X post URL (e.g., https://x.com/username/status/1234567890)
+    - **task_type**: Task type (tts, voice_clone, music_gen) - defaults to "tts" for backward compatibility
     - **voice**: TTS voice to use (alloy, echo, fable, onyx, nova, shimmer)
     - **model**: TTS model to use (tts-1, tts-1-hd)
     - **response_format**: Audio format (mp3, opus, aac, flac)
     - **speed**: Speech speed (0.25 to 4.0)
-    - **voice_id**: Optional voice ID for TTS (optional)
+    - **voice_id**: Optional voice ID for TTS (required for voice_clone tasks)
     - **audio_url**: Optional audio URL for TTS (optional)
     - **username**: Optional username for the TTS task (optional)
+    - **style**: Optional music style for music_gen tasks (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)
     
     Note: Tenant ID is automatically extracted from authenticated user
     """
@@ -55,6 +57,8 @@ async def create_twitter_tts_task(
             voice_id=request.voice_id,
             audio_url=request.audio_url,
             username=request.username,
+            task_type=request.task_type,
+            style=request.style,
             tenant_id=tenant_id
         )
         
@@ -133,6 +137,8 @@ async def get_twitter_tts_tasks(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     status: Optional[str] = Query(None, description="Filter by status (in_progress, done, failed)"),
+    task_type: Optional[str] = Query(None, description="Filter by task type (tts, voice_clone, music_gen)"),
+    style: Optional[str] = Query(None, description="Filter by music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)"),
     username: Optional[str] = Query(None, description="Filter by username")
 ):
     """
@@ -141,6 +147,8 @@ async def get_twitter_tts_tasks(
     - **page**: Page number (starts from 1)
     - **page_size**: Number of tasks per page (1-100)
     - **status**: Optional status filter
+    - **task_type**: Optional task type filter (tts, voice_clone, music_gen)
+    - **style**: Optional music style filter (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)
     - **username**: Optional username filter
     
     Note: Tenant ID is automatically extracted from authenticated user
@@ -159,6 +167,8 @@ async def get_twitter_tts_tasks(
             page=page,
             page_size=page_size,
             status=status,
+            task_type=task_type,
+            style=style,
             username=username
         )
         

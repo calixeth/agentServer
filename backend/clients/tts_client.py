@@ -171,16 +171,11 @@ class VoiceCloneTTSClient(BaseTTSClient):
             Audio data as bytes, or None if failed
         """
         try:
-            logging.info(f"Converting text to speech with voice cloning: {text[:50]}...")
 
-            # Extract voice_id from kwargs or use default
-            voice_id = kwargs.get("voice_id", "Voice0633fc261755413706")
-            arguments = {
-                "voice_setting": {
-                    "voice_id": voice_id,
-                },
-                "text": text,
-            }
+            arguments = {}
+            if text:
+                logging.info(f"Converting text to speech with voice cloning: {text[:50]}...")
+                arguments["text"] = text
             if kwargs.get("voice_id"):
                 arguments.update({
                     "voice_setting": {
@@ -189,9 +184,16 @@ class VoiceCloneTTSClient(BaseTTSClient):
                 })
             if kwargs.get("audio_url"):
                 arguments.update({"audio_url": kwargs.get("audio_url")})
-
+            if kwargs.get("prompt"):
+                logging.info(f"Converting prompt to speech with voice cloning: {kwargs.get("prompt")[:50]}...")
+                arguments.update({"prompt": kwargs.get("prompt")})
+            if kwargs.get("reference_audio_url"):
+                arguments.update({"reference_audio_url": kwargs.get("reference_audio_url")})
+            voice_application = SETTINGS.VOICE_APPLICATION_ID
+            if kwargs.get("voice_application"):
+                voice_application = kwargs.get("voice_application")
             handler = await fal_client.submit_async(
-                SETTINGS.VOICE_APPLICATION_ID,
+                voice_application,
                 arguments=arguments,
             )
 

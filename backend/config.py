@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     # TTS Provider Configuration
     TTS_PROVIDER: str = "voice_clone"  # "openai" or "voice_clone"
     VOICE_APPLICATION_ID: str = ""
+    VOICE_APPLICATION_CLONE: str = ""
+    VOICE_APPLICATION_MUSIC: str = ""
 
     JWT_SECRET: str = ""
     JWT_EXPIRATION_TIME: int = 1  # default one day

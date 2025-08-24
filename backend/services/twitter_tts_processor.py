@@ -2,11 +2,61 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Optional
+from abc import ABC, abstractmethod
 
-from entities.dto import TwitterTTSTask
+from entities.dto import TwitterTTSTask, TaskType, TaskStatus
+from infra.db import twitter_tts_task_save
 from services import twitter_tts_service
 
 logger = logging.getLogger(__name__)
+
+
+class TaskProcessorStrategy(ABC):
+    """Abstract base class for task processing strategies"""
+    
+    @abstractmethod
+    async def process(self, task: TwitterTTSTask) -> bool:
+        """Process a task and return success status"""
+        pass
+
+
+class TTSTaskProcessor(TaskProcessorStrategy):
+    """Processor for standard TTS tasks"""
+    
+    async def process(self, task: TwitterTTSTask) -> bool:
+        """Process TTS task using the original logic"""
+        return await twitter_tts_service._process_tts_task(task)
+
+
+class VoiceCloneTaskProcessor(TaskProcessorStrategy):
+    """Processor for voice cloning tasks"""
+    
+    async def process(self, task: TwitterTTSTask) -> bool:
+        """Process voice cloning task"""
+        return await twitter_tts_service._process_voice_clone_task(task)
+
+
+class MusicGenTaskProcessor(TaskProcessorStrategy):
+    """Processor for music generation tasks"""
+    
+    async def process(self, task: TwitterTTSTask) -> bool:
+        """Process music generation task"""
+        return await twitter_tts_service._process_music_gen_task(task)
+
+
+class TaskProcessorFactory:
+    """Factory for creating task processors based on task type"""
+    
+    _processors = {
+        TaskType.TTS: TTSTaskProcessor(),
+        TaskType.VOICE_CLONE: VoiceCloneTaskProcessor(),
+        TaskType.MUSIC_GEN: MusicGenTaskProcessor(),
+    }
+    
+    @classmethod
+    def get_processor(cls, task_type: TaskType) -> TaskProcessorStrategy:
+        """Get processor for the specified task type"""
+        return cls._processors.get(task_type, cls._processors[TaskType.TTS])
 
 
 class TwitterTTSProcessor:
@@ -78,9 +128,16 @@ class TwitterTTSProcessor:
             async def process_single_task(task: TwitterTTSTask):
                 async with semaphore:
                     try:
-                        await twitter_tts_service.process_twitter_tts_task(task)
+                        # Use strategy pattern to process task based on type
+                        processor = TaskProcessorFactory.get_processor(task.task_type)
+                        await processor.process(task)
                     except Exception as e:
                         logger.error(f"Error processing task {task.task_id}: {e}", exc_info=True)
+                        # Update task with error
+                        task.status = TaskStatus.FAILED
+                        task.error_message = str(e)
+                        task.updated_at = datetime.now()
+                        await twitter_tts_task_save(task)
             
             # Create tasks for concurrent processing
             tasks = [process_single_task(task) for task in pending_tasks]
@@ -113,7 +170,9 @@ class TwitterTTSProcessor:
                 logger.warning(f"Task {task_id} is not in progress status: {task.status}")
                 return False
             
-            return await twitter_tts_service.process_twitter_tts_task(task)
+            # Use strategy pattern to process task based on type
+            processor = TaskProcessorFactory.get_processor(task.task_type)
+            return await processor.process(task)
             
         except Exception as e:
             logger.error(f"Error processing single task {task_id}: {e}", exc_info=True)
