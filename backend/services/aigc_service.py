@@ -5,8 +5,7 @@ import uuid
 
 from fastapi import BackgroundTasks
 
-from agent.prompt.aigc import COVER_IMG_PROMPT, V_DANCE_PROMPT, V_GOGO_PROMPT, V_TURN_PROMPT, \
-    V_ANGRY_PROMPT, V_SAYING_PROMPT, V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
+from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3
 from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
