@@ -6,7 +6,7 @@ import uuid
 from fastapi import BackgroundTasks
 
 from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
-    V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT
+    V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
 from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
 from common.error import raise_error
@@ -133,8 +133,8 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         prompt = V_DANCE_VIDEO_PROMPT
     # elif VideoKeyType.GOGO == req.key:
     #     prompt = V_GOGO_PROMPT
-    # elif VideoKeyType.TURN == req.key:
-    #     prompt = V_TURN_PROMPT
+    elif VideoKeyType.TURN == req.key:
+        prompt = V_TURN_PROMPT
     # elif VideoKeyType.ANGRY == req.key:
     #     prompt = V_ANGRY_PROMPT
     # elif VideoKeyType.SAYING == req.key:
@@ -158,7 +158,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
     if VideoKeyType.DANCE == req.key:
         data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
     elif VideoKeyType.SING == req.key:
-        data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
+        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
     else:
         data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
 
