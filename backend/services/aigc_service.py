@@ -7,7 +7,7 @@ from fastapi import BackgroundTasks
 
 from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT
-from clients.gen_fal_client import veo3_gen_video_svc_v3
+from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
 from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
 from common.error import raise_error
 from config import SETTINGS
@@ -155,7 +155,13 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
     else:
         first_frame_img_url = task.cover.output.first_frame_img_url
 
-    data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
+    if VideoKeyType.DANCE == req.key:
+        data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
+    elif VideoKeyType.SING == req.key:
+        data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
+    else:
+        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+
     cur_task = await aigc_task_get_by_id(task.task_id)
     if data:
         for v in cur_task.videos:
@@ -164,7 +170,13 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
                 v.status = TaskStatus.DONE
                 v.done_at = datetime.datetime.now()
                 break
-
+        await aigc_task_save(cur_task)
+    else:
+        for v in cur_task.videos:
+            if v.input.key == req.key:
+                v.status = TaskStatus.FAILED
+                v.done_at = datetime.datetime.now()
+                break
         await aigc_task_save(cur_task)
 
 
