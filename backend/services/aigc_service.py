@@ -14,12 +14,20 @@ from common.error import raise_error
 from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
-    DigitalVideo, GenCoverResp, AIGCPublishReq
+    DigitalVideo, GenCoverResp, AIGCPublishReq, GenerateLyricsRequest
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import create_twitter_tts_task
+
+
+async def gen_lyrics_svc(req: GenerateLyricsRequest, background: BackgroundTasks) -> AIGCTask:
+    task = await aigc_task_get_by_id(req.task_id)
+
+    await check_limit_and_record(client=f"task-{task.task_id}", resource="gen-lyrics")
+
+    pass
 
 
 async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) -> AIGCTask:

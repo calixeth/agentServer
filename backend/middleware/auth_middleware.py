@@ -19,7 +19,15 @@ logger = logging.getLogger(__name__)
 
 class AuthConfig:
     """Authentication configuration"""
-    PUBLIC_PREFIXES = ["/api/health", "/openapi.json", "/api/auth"]
+    PUBLIC_PREFIXES = [
+        "/api/health",
+        "/openapi.json",
+        "/api/auth",
+        "/api/digital_human/list",
+        "/api/digital_human/get_by_id",
+        "/api/x/user",
+        "/api/twitter-tts/tasks"
+    ]
 
 
 class AuthResponse:

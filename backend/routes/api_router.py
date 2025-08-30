@@ -10,12 +10,13 @@ from clients.twitter_client import twitter_fetch_user_tweets
 from common.error import raise_error
 from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
-from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq
+from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
+    GenerateLyricsRequest
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_username, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
-from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id
+from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc
 from services.twitter_service import twitter_fetch_user_svc
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,16 @@ async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
 async def gen_scenario_video(req: GenVideoReq, background_tasks: BackgroundTasks):
     logging.info(f"gen_scenario_video req: {req.model_dump_json()}")
     ret = await gen_video_svc(req, background_tasks)
+    return RestResponse(data=ret)
+
+
+@router.post("/api/aigc_task/gen_lyrics",
+             summary="aigc_task/gen_lyrics",
+             response_model=RestResponse[AIGCTask]
+             )
+async def gen_lyrics(req: GenerateLyricsRequest, background_tasks: BackgroundTasks):
+    logging.info(f"gen_lyrics req: {req.model_dump_json()}")
+    ret = await gen_lyrics_svc(req, background_tasks)
     return RestResponse(data=ret)
 
 

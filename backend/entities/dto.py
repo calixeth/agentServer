@@ -112,6 +112,22 @@ class Cover(SubTask):
     output: GenCoverResp | None = Field(description="cover", default=None)
 
 
+class GenerateLyricsRequest(BaseModel):
+    """Request for generating lyrics from Twitter URL"""
+    twitter_url: str = Field(description="Twitter/X post URL")
+
+
+class GenerateLyricsResp(BaseModel):
+    """Response for lyrics generation"""
+    lyrics: str = Field(description="Generated lyrics text")
+    title: str = Field(description="Extracted title from lyrics", default="")
+
+
+class Lyrics(SubTask):
+    input: GenerateLyricsRequest
+    output: GenerateLyricsResp | None = Field(description="lyrics", default=None)
+
+
 class VideoKeyType(StrEnum):
     TURN = "turn"
     SAYING = "saying"
@@ -147,6 +163,7 @@ class AIGCTask(BaseModel):
     tenant_id: str = Field(description="tenant_id")
     created_at: datetime.datetime = Field(description="created_at")
     cover: Cover | None = Field(description="cover", default=None)
+    lyrics: Lyrics | None = Field(description="lyrics", default=None)
     videos: list[Video] = Field(description="videos", default_factory=list)
 
     def check_cover(self):
@@ -294,9 +311,6 @@ class DigitalHuman(BaseModel):
 
 
 # New DTOs for lyrics and music generation APIs
-class GenerateLyricsRequest(BaseModel):
-    """Request for generating lyrics from Twitter URL"""
-    twitter_url: str = Field(description="Twitter/X post URL")
 
 
 class GenerateLyricsResponse(BaseModel):
