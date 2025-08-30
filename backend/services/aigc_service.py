@@ -17,7 +17,7 @@ from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoRe
     DigitalVideo, GenCoverResp, AIGCPublishReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
-from services.resource_usage_limit import check_limit_and_record, RESOURCE_LIMIT_GEN_IMG
+from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import create_twitter_tts_task
 
