@@ -31,3 +31,11 @@ Replace the rock character’s head in Image 2 with the portrait from Image 1 to
 
 V_SING_VIDEO_PROMPT = """\
 He stands onstage roaring, muscles tensed, gripping a black Explorer guitar with lightning patterns etched into its body. His hair whips around under the searing white spotlights, partly obscuring his face. His eyes blaze with the righteous fury of thrash metal. His microphone stand is forged from twisted steel and broken stage rails, wrapped in colored electrical tape and guitar picks left from hundreds of battles. Behind him, an enormous wall of amps glows like a power plant—stacked Marshall heads spitting sparks from their edges. Flames lick the edge of the stage, while the crowd surges like an ocean of raised fists and devil horns. Atmosphere: it feels like a battlefield of sound. Pick-shaped lightning crackles in the air. The air is thick with smoke, sweat, and the scent of metal. Hetfield is captured mid-roar, mouth wide open, ready to unleash a verse that could shatter the earth.The final video size should be 1024px wide and 1536px high.nagative:blur, distort, and low quality"""
+
+V_FIGURE_IMAGE_PROMPT="""\
+Use the nano-banana model to create a 1/7 scale commercialized figure of thecharacter in the illustration, in a realistic styie and environment.Place the figure on a computer desk, using a circular transparent acrylic base without any text.On the computer screen, display the ZBrush modeling process of the figure.Next to the computer screen, place a BANDAl-style toy packaging box printedwith the original artwork.The final image size should be 1536px wide and 1024px high.
+"""
+
+V_FIGURE_VIDEO_PROMPT="""\
+A hand slowly picks up the figurine from the desk and carefully turns it over to examine the details.
+"""

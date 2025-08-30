@@ -6,9 +6,10 @@ import uuid
 from fastapi import BackgroundTasks
 
 from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
-    V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT
+    V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
+    V_FIGURE_IMAGE_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
-from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc
+from clients.openai_gen_img import openai_gen_img_svc, openai_gen_imgs_svc, gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
@@ -96,10 +97,14 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
     sing_imgs_task = openai_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
                                          prompt=V_SING_IMAGE_PROMPT)
 
-    first_frame_imgs, dance_imgs, sing_imgs = await asyncio.gather(
+    figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
+                                          prompt=V_FIGURE_IMAGE_PROMPT)
+
+    first_frame_imgs, dance_imgs, sing_imgs, figure_imgs = await asyncio.gather(
         first_frame_imgs_task,
         dance_imgs_task,
-        sing_imgs_task
+        sing_imgs_task,
+        figure_imgs_task
     )
 
     cur_task = await aigc_task_get_by_id(task.task_id)
@@ -115,12 +120,17 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
     if sing_imgs and sing_imgs.data:
         sing_url = await s3_upload_openai_img(sing_imgs.data[0])
 
+    figure_url = ""
+    if figure_imgs and figure_imgs.data:
+        figure_url = await s3_upload_openai_img(figure_imgs.data[0])
+
     if first_frame_url and dance_url and sing_url:
         cur_task.cover.output = GenCoverResp(
             first_frame_img_url=first_frame_url,
             cover_img_url=first_frame_url,
             dance_first_frame_img_url=dance_url,
-            sing_first_frame_img_url=sing_url
+            sing_first_frame_img_url=sing_url,
+            figure_first_frame_img_url=figure_url,
         )
         cur_task.cover.status = TaskStatus.DONE
         cur_task.cover.done_at = datetime.datetime.now()
@@ -150,6 +160,8 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         prompt = V_THINK_PROMPT
     elif VideoKeyType.SING == req.key:
         prompt = V_SING_VIDEO_PROMPT
+    elif VideoKeyType.FIGURE == req.key:
+        prompt = V_FIGURE_IMAGE_PROMPT
     else:
         prompt = V_DEFAULT_PROMPT
 
@@ -157,12 +169,16 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         first_frame_img_url = task.cover.output.dance_first_frame_img_url
     elif VideoKeyType.SING == req.key:
         first_frame_img_url = task.cover.output.sing_first_frame_img_url
+    elif VideoKeyType.FIGURE == req.key:
+        first_frame_img_url = task.cover.output.figure_first_frame_img_url
     else:
         first_frame_img_url = task.cover.output.first_frame_img_url
 
     if VideoKeyType.DANCE == req.key:
         data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
     elif VideoKeyType.SING == req.key:
+        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+    elif VideoKeyType.FIGURE == req.key:
         data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
     else:
         data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)

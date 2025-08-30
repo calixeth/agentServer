@@ -104,6 +104,7 @@ class GenCoverResp(BaseModel):
     cover_img_url: str = Field(description="cover_url", default="")
     dance_first_frame_img_url: str = Field(description="dance_first_frame_img_url", default="")
     sing_first_frame_img_url: str = Field(description="sing_first_frame_img_url", default="")
+    figure_first_frame_img_url: str = Field(description="figure_first_frame_img_url", default="")
 
 
 class Cover(SubTask):
@@ -121,6 +122,7 @@ class VideoKeyType(StrEnum):
     THINK = "think"
     SING = "sing"
     SPEECH = "speech"
+    FIGURE = "figure"
 
 
 class GenVideoReq(BaseModel):
