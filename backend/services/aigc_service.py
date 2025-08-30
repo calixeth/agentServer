@@ -14,9 +14,11 @@ from common.error import raise_error
 from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
-    DigitalVideo, GenCoverResp, AIGCPublishReq, GenerateLyricsRequest
+    DigitalVideo, GenCoverResp, AIGCPublishReq, GenerateLyricsRequest, Lyrics, GenerateLyricsResponse, \
+    GenerateLyricsResp
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
+from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import create_twitter_tts_task
@@ -27,7 +29,23 @@ async def gen_lyrics_svc(req: GenerateLyricsRequest, background: BackgroundTasks
 
     await check_limit_and_record(client=f"task-{task.task_id}", resource="gen-lyrics")
 
-    pass
+    if task.lyrics:
+        task.lyrics.regenerate()
+        task.lyrics.input = req
+        task.cover.output = None
+    else:
+        task.lyrics = Lyrics(
+            sub_task_id=str(uuid.uuid4()),
+            input=req,
+            output=None,
+            created_at=datetime.datetime.now()
+        )
+
+    await aigc_task_save(task)
+
+    background.add_task(_task_gen_lyrics, task, req.twitter_url)
+
+    return task
 
 
 async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) -> AIGCTask:
@@ -300,3 +318,25 @@ async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str):
             audio_url=None
         )
         await create_twitter_tts_task(request_bo)
+
+
+async def _task_gen_lyrics(task: AIGCTask, twitter_url: str):
+    result = await twitter_tts_service.generate_lyrics_from_twitter_url(
+        twitter_url=twitter_url,
+        tenant_id=task.tenant_id,
+    )
+    response = GenerateLyricsResponse(**result)
+
+    cur_task = await aigc_task_get_by_id(task.task_id)
+    if response:
+        cur_task.lyrics.output = GenerateLyricsResp(
+            lyrics=response.lyrics,
+            title=response.title,
+        )
+        cur_task.lyrics.status = TaskStatus.DONE
+        cur_task.lyrics.done_at = datetime.datetime.now()
+        await aigc_task_save(cur_task)
+        return
+
+    cur_task.lyrics.status = TaskStatus.FAILED
+    await aigc_task_save(cur_task)
