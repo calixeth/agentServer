@@ -114,7 +114,12 @@ class Cover(SubTask):
 
 class GenerateLyricsRequest(BaseModel):
     """Request for generating lyrics from Twitter URL"""
-    twitter_url: str = Field(description="Twitter/X post URL")
+    twitter_url: str = Field(description="Twitter/X post URL. default user cover x link")
+
+
+class GenerateLyricsReq(BaseModel):
+    """Request for generating lyrics from Twitter URL"""
+    task_id: str = Field(description="task_id")
 
 
 class GenerateLyricsResp(BaseModel):
@@ -124,7 +129,7 @@ class GenerateLyricsResp(BaseModel):
 
 
 class Lyrics(SubTask):
-    input: GenerateLyricsRequest
+    input: GenerateLyricsReq
     output: GenerateLyricsResp | None = Field(description="lyrics", default=None)
 
 

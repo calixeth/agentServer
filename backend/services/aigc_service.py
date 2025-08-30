@@ -14,8 +14,8 @@ from common.error import raise_error
 from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
-    DigitalVideo, GenCoverResp, AIGCPublishReq, GenerateLyricsRequest, Lyrics, GenerateLyricsResponse, \
-    GenerateLyricsResp
+    DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
+    GenerateLyricsResp, GenerateLyricsReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services import twitter_tts_service
@@ -24,7 +24,7 @@ from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import create_twitter_tts_task
 
 
-async def gen_lyrics_svc(req: GenerateLyricsRequest, background: BackgroundTasks) -> AIGCTask:
+async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) -> AIGCTask:
     task = await aigc_task_get_by_id(req.task_id)
 
     await check_limit_and_record(client=f"task-{task.task_id}", resource="gen-lyrics")
@@ -43,7 +43,7 @@ async def gen_lyrics_svc(req: GenerateLyricsRequest, background: BackgroundTasks
 
     await aigc_task_save(task)
 
-    background.add_task(_task_gen_lyrics, task, req.twitter_url)
+    background.add_task(_task_gen_lyrics, task)
 
     return task
 
@@ -320,9 +320,9 @@ async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str):
         await create_twitter_tts_task(request_bo)
 
 
-async def _task_gen_lyrics(task: AIGCTask, twitter_url: str):
+async def _task_gen_lyrics(task: AIGCTask):
     result = await twitter_tts_service.generate_lyrics_from_twitter_url(
-        twitter_url=twitter_url,
+        twitter_url=task.cover.input.x_link,
         tenant_id=task.tenant_id,
     )
     response = GenerateLyricsResponse(**result)
