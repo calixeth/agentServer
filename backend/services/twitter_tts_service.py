@@ -529,8 +529,8 @@ async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str) -> 
             return {}
 
         return {
-            "lyrics": data[0].lstrip(),
-            "title": data[1].lstrip(),
+            "title": data[0].lstrip(),
+            "lyrics": data[1].lstrip(),
             "twitter_url": twitter_url,
             "generated_at": datetime.now().isoformat()
         }
