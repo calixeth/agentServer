@@ -1,5 +1,3 @@
-import asyncio
-
 import motor.motor_asyncio
 
 from config import SETTINGS
@@ -15,6 +13,8 @@ users_col = db["users"]  # Collection for user authentication data
 twitter_tts_task_col = db["twitter_tts_task"]  # Collection for Twitter TTS tasks
 digital_human_col = db["digital_human"]
 predefined_voice_col = db["predefined_voice"]
+resource_limits_col = db["resource_limits"]
+resource_usage_col = db["resource_usage"]
 
 
 async def digital_human_save(digital_human: DigitalHuman):
@@ -76,11 +76,12 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, task_type: str = None, style: str = None, username: str = None) -> \
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None,
+                                         task_type: str = None, style: str = None, username: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size
-    
+
     # Build query
     query = {"tenant_id": tenant_id}
     if status:
@@ -91,10 +92,10 @@ async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_siz
         query["style"] = style
     if username:
         query["username"] = username
-    
+
     # Get total count
     total = await twitter_tts_task_col.count_documents(query)
-    
+
     # Get tasks with pagination
     cursor = twitter_tts_task_col.find(query).sort("created_at", -1).skip(skip).limit(page_size)
     tasks = []
@@ -126,10 +127,10 @@ async def predefined_voice_get_all(category: str = None, is_active: bool = True)
     query = {"is_active": is_active}
     if category:
         query["category"] = category
-    
+
     # Get total count
     total = await predefined_voice_col.count_documents(query)
-    
+
     # Get voices
     cursor = predefined_voice_col.find(query).sort("name", 1)
     voices = []
@@ -139,7 +140,7 @@ async def predefined_voice_get_all(category: str = None, is_active: bool = True)
             doc["audio_url"] = None
         if "updated_at" not in doc:
             doc["updated_at"] = doc.get("created_at")  # Use created_at as fallback
-        
+
         voices.append(PredefinedVoice(**doc))
 
     return voices, total
@@ -154,7 +155,7 @@ async def predefined_voice_get_by_id(voice_id: str) -> PredefinedVoice | None:
             ret["audio_url"] = None
         if "updated_at" not in ret:
             ret["updated_at"] = ret.get("created_at")  # Use created_at as fallback
-        
+
         return PredefinedVoice(**ret)
     else:
         return None

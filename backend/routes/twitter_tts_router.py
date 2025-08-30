@@ -7,20 +7,22 @@ from common.error_messages import get_error_message
 from common.exceptions import CustomAgentException, ErrorCode
 from common.response import RestResponse
 from entities.bo import TwitterTTSRequestBO
-from entities.dto import TwitterTTSRequest, TwitterTTSResponse, TwitterTTSTask, TwitterTTSTaskListResponse, TwitterTTSTaskQuery
 from entities.dto import PredefinedVoice, PredefinedVoiceListResponse
-from services import twitter_tts_service
+from entities.dto import TwitterTTSRequest, TwitterTTSResponse, TwitterTTSTask, TwitterTTSTaskListResponse
 from middleware.auth_middleware import get_current_user
+from services import twitter_tts_service
+from services.resource_usage_limit import check_limit_and_record
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
 
-@router.post("/api/twitter-tts/create", response_model=RestResponse[TwitterTTSResponse], summary="Create Twitter TTS task")
+@router.post("/api/twitter-tts/create", response_model=RestResponse[TwitterTTSResponse],
+             summary="Create Twitter TTS task")
 async def create_twitter_tts_task(
-    request: TwitterTTSRequest,
-    user: dict = Depends(get_current_user)
+        request: TwitterTTSRequest,
+        user: dict = Depends(get_current_user)
 ):
     """
     Create a new Twitter TTS task
@@ -46,7 +48,9 @@ async def create_twitter_tts_task(
                 code=ErrorCode.INVALID_PARAMETERS,
                 msg="User does not have a valid tenant ID"
             )
-        
+
+        await check_limit_and_record(client=f"tenant-id-{tenant_id}", resource=f"tts")
+
         # Convert to business object
         request_bo = TwitterTTSRequestBO(
             twitter_url=request.twitter_url,
@@ -61,18 +65,18 @@ async def create_twitter_tts_task(
             style=request.style,
             tenant_id=tenant_id
         )
-        
+
         # Create task
         task = await twitter_tts_service.create_twitter_tts_task(request_bo)
-        
+
         response = TwitterTTSResponse(
             task_id=task.task_id,
             status=task.status,
             message="Twitter TTS task created successfully"
         )
-        
+
         return RestResponse(data=response)
-        
+
     except ValueError as e:
         logger.error(f"Validation error in Twitter TTS task creation: {str(e)}")
         return RestResponse(
@@ -90,10 +94,11 @@ async def create_twitter_tts_task(
         )
 
 
-@router.get("/api/twitter-tts/task/{task_id}", response_model=RestResponse[TwitterTTSTask], summary="Get Twitter TTS task by ID")
+@router.get("/api/twitter-tts/task/{task_id}", response_model=RestResponse[TwitterTTSTask],
+            summary="Get Twitter TTS task by ID")
 async def get_twitter_tts_task(
-    task_id: str,
-    user: dict = Depends(get_current_user)
+        task_id: str,
+        user: dict = Depends(get_current_user)
 ):
     """
     Get Twitter TTS task details by task ID
@@ -109,7 +114,7 @@ async def get_twitter_tts_task(
                 code=ErrorCode.NOT_FOUND,
                 msg="Task not found"
             )
-        
+
         # Check if user has access to this task
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
@@ -117,9 +122,9 @@ async def get_twitter_tts_task(
                 code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
-        
+
         return RestResponse(data=task)
-        
+
     except CustomAgentException as e:
         logger.error(f"Error getting Twitter TTS task: {str(e)}", exc_info=True)
         return RestResponse(code=e.error_code, msg=e.message)
@@ -131,15 +136,17 @@ async def get_twitter_tts_task(
         )
 
 
-@router.get("/api/twitter-tts/tasks", response_model=RestResponse[TwitterTTSTaskListResponse], summary="Get Twitter TTS tasks by tenant")
+@router.get("/api/twitter-tts/tasks", response_model=RestResponse[TwitterTTSTaskListResponse],
+            summary="Get Twitter TTS tasks by tenant")
 async def get_twitter_tts_tasks(
-    user: dict = Depends(get_current_user),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Page size"),
-    status: Optional[str] = Query(None, description="Filter by status (in_progress, done, failed)"),
-    task_type: Optional[str] = Query(None, description="Filter by task type (tts, voice_clone, music_gen)"),
-    style: Optional[str] = Query(None, description="Filter by music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)"),
-    username: Optional[str] = Query(None, description="Filter by username")
+        user: dict = Depends(get_current_user),
+        page: int = Query(1, ge=1, description="Page number"),
+        page_size: int = Query(20, ge=1, le=100, description="Page size"),
+        status: Optional[str] = Query(None, description="Filter by status (in_progress, done, failed)"),
+        task_type: Optional[str] = Query(None, description="Filter by task type (tts, voice_clone, music_gen)"),
+        style: Optional[str] = Query(None,
+                                     description="Filter by music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)"),
+        username: Optional[str] = Query(None, description="Filter by username")
 ):
     """
     Get Twitter TTS tasks for the authenticated user's tenant with pagination
@@ -161,7 +168,7 @@ async def get_twitter_tts_tasks(
                 code=ErrorCode.AUTH_ERROR,
                 msg="User does not have a valid tenant ID"
             )
-        
+
         result = await twitter_tts_service.get_twitter_tts_tasks_by_tenant(
             tenant_id=tenant_id,
             page=page,
@@ -171,9 +178,9 @@ async def get_twitter_tts_tasks(
             style=style,
             username=username
         )
-        
+
         return RestResponse(data=result)
-        
+
     except CustomAgentException as e:
         logger.error(f"Error getting Twitter TTS tasks: {str(e)}", exc_info=True)
         return RestResponse(code=e.error_code, msg=e.message)
@@ -185,10 +192,11 @@ async def get_twitter_tts_tasks(
         )
 
 
-@router.post("/api/twitter-tts/task/{task_id}/retry", response_model=RestResponse[dict], summary="Retry failed Twitter TTS task")
+@router.post("/api/twitter-tts/task/{task_id}/retry", response_model=RestResponse[dict],
+             summary="Retry failed Twitter TTS task")
 async def retry_twitter_tts_task(
-    task_id: str,
-    user: dict = Depends(get_current_user)
+        task_id: str,
+        user: dict = Depends(get_current_user)
 ):
     """
     Retry a failed Twitter TTS task
@@ -205,16 +213,18 @@ async def retry_twitter_tts_task(
                 code=ErrorCode.NOT_FOUND,
                 msg="Task not found"
             )
-        
+
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
             return RestResponse(
                 code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
-        
+
+        await check_limit_and_record(client=f"tenant-id-{tenant_id}", resource=f"tts")
+
         success = await twitter_tts_service.retry_failed_twitter_tts_task(task_id)
-        
+
         if success:
             return RestResponse(
                 data={"message": "Task retry initiated successfully"},
@@ -225,7 +235,7 @@ async def retry_twitter_tts_task(
                 code=ErrorCode.INTERNAL_ERROR,
                 msg="Failed to retry task. Task may not exist or not in failed status."
             )
-            
+
     except CustomAgentException as e:
         logger.error(f"Error retrying Twitter TTS task: {str(e)}", exc_info=True)
         return RestResponse(code=e.error_code, msg=e.message)
@@ -239,8 +249,8 @@ async def retry_twitter_tts_task(
 
 @router.delete("/api/twitter-tts/task/{task_id}", response_model=RestResponse[dict], summary="Delete Twitter TTS task")
 async def delete_twitter_tts_task(
-    task_id: str,
-    user: dict = Depends(get_current_user)
+        task_id: str,
+        user: dict = Depends(get_current_user)
 ):
     """
     Delete a Twitter TTS task (soft delete by marking as deleted)
@@ -257,14 +267,14 @@ async def delete_twitter_tts_task(
                 code=ErrorCode.NOT_FOUND,
                 msg="Task not found"
             )
-        
+
         tenant_id = user.get("tenant_id")
         if task.tenant_id != tenant_id:
             return RestResponse(
                 code=ErrorCode.AUTH_ERROR,
                 msg="Access denied: Task belongs to different tenant"
             )
-        
+
         # For now, we'll just return a success message
         # In a real implementation, you might want to add a 'deleted' field to the task
         # or move it to a separate collection
@@ -272,7 +282,7 @@ async def delete_twitter_tts_task(
             data={"message": "Task deletion not implemented yet"},
             msg="Task deletion not implemented yet"
         )
-        
+
     except Exception as e:
         logger.error(f"Unexpected error deleting Twitter TTS task: {str(e)}", exc_info=True)
         return RestResponse(
@@ -281,10 +291,11 @@ async def delete_twitter_tts_task(
         )
 
 
-@router.get("/api/twitter-tts/voices", response_model=RestResponse[PredefinedVoiceListResponse], summary="Get all predefined voices")
+@router.get("/api/twitter-tts/voices", response_model=RestResponse[PredefinedVoiceListResponse],
+            summary="Get all predefined voices")
 async def get_all_predefined_voices(
-    category: Optional[str] = Query(None, description="Filter by voice category"),
-    is_active: bool = Query(True, description="Filter by active status")
+        category: Optional[str] = Query(None, description="Filter by voice category"),
+        is_active: bool = Query(True, description="Filter by active status")
 ):
     """
     Get all predefined voices with optional filtering
@@ -296,14 +307,14 @@ async def get_all_predefined_voices(
     """
     try:
         voices, total = await twitter_tts_service.get_all_predefined_voices(category, is_active)
-        
+
         response = PredefinedVoiceListResponse(
             voices=voices,
             total=total
         )
-        
+
         return RestResponse(data=response)
-        
+
     except Exception as e:
         logger.error(f"Unexpected error getting predefined voices: {str(e)}", exc_info=True)
         return RestResponse(
@@ -312,7 +323,8 @@ async def get_all_predefined_voices(
         )
 
 
-@router.get("/api/twitter-tts/voices/{voice_id}", response_model=RestResponse[PredefinedVoice], summary="Get predefined voice by ID")
+@router.get("/api/twitter-tts/voices/{voice_id}", response_model=RestResponse[PredefinedVoice],
+            summary="Get predefined voice by ID")
 async def get_predefined_voice_by_id(voice_id: str):
     """
     Get predefined voice details by voice ID
@@ -323,18 +335,18 @@ async def get_predefined_voice_by_id(voice_id: str):
     """
     try:
         voice = await twitter_tts_service.get_predefined_voice_by_id(voice_id)
-        
+
         if not voice:
             return RestResponse(
                 code=ErrorCode.INVALID_PARAMETERS,
                 msg="Voice not found"
             )
-        
+
         return RestResponse(data=voice)
-        
+
     except Exception as e:
         logger.error(f"Unexpected error getting predefined voice: {str(e)}", exc_info=True)
         return RestResponse(
             code=ErrorCode.INTERNAL_ERROR,
             msg=get_error_message(ErrorCode.INTERNAL_ERROR)
-        ) 
+        )
