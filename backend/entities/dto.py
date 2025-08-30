@@ -288,6 +288,9 @@ class DigitalHuman(BaseModel):
     mp3_url: str = Field(description="mp3 url", default="")
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
     country: Country = Field(description="country")
+    dance_image: str = Field(description="dance image", default=None)
+    sing_image: str = Field(description="sing_image", default=None)
+    figure_image: str = Field(description="figure image", default=None)
 
 
 # New DTOs for lyrics and music generation APIs
@@ -307,7 +310,8 @@ class GenerateLyricsResponse(BaseModel):
 class GenerateMusicRequest(BaseModel):
     """Request for generating music from lyrics"""
     lyrics: str = Field(description="Lyrics text to generate music from")
-    style: str = Field(description="Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
+    style: str = Field(
+        description="Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
     reference_audio_url: str = Field(description="Audio url")
     voice: str = Field(description="TTS voice to use", default="alloy")
     model: str = Field(description="TTS model to use", default="tts-1")

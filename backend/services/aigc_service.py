@@ -268,6 +268,9 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
         gender=req.gender,
         description=description,
         country=country,
+        sing_image=task.cover.output.sing_first_frame_img_url,
+        figure_image=task.cover.output.figure_first_frame_img_url,
+        dance_image=task.cover.output.dance_first_frame_img_url,
     )
 
     await digital_human_save(bo)
