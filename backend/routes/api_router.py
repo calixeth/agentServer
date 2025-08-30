@@ -11,7 +11,7 @@ from common.error import raise_error
 from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsRequest, GenerateLyricsReq
+    GenerateLyricsReq
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_username, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
