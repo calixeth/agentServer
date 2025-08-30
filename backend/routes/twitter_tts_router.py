@@ -7,6 +7,7 @@ from common.error_messages import get_error_message
 from common.exceptions import CustomAgentException, ErrorCode
 from common.response import RestResponse
 from entities.bo import TwitterTTSRequestBO
+from entities.dto import GenerateLyricsRequest, GenerateLyricsResponse, GenerateMusicRequest, GenerateMusicResponse
 from entities.dto import PredefinedVoice, PredefinedVoiceListResponse
 from entities.dto import TwitterTTSRequest, TwitterTTSResponse, TwitterTTSTask, TwitterTTSTaskListResponse
 from middleware.auth_middleware import get_current_user
@@ -346,6 +347,120 @@ async def get_predefined_voice_by_id(voice_id: str):
 
     except Exception as e:
         logger.error(f"Unexpected error getting predefined voice: {str(e)}", exc_info=True)
+        return RestResponse(
+            code=ErrorCode.INTERNAL_ERROR,
+            msg=get_error_message(ErrorCode.INTERNAL_ERROR)
+        )
+
+
+@router.post("/api/twitter-tts/generate-lyrics", response_model=RestResponse[GenerateLyricsResponse], summary="Generate lyrics from Twitter URL")
+async def generate_lyrics_from_twitter(
+    request: GenerateLyricsRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Generate lyrics from Twitter URL by analyzing user profile and recent tweets
+
+    - **twitter_url**: Twitter/X post URL (e.g., https://x.com/username/status/1234567890)
+
+    Note: Tenant ID is automatically extracted from authenticated user
+    """
+    try:
+        # Get tenant_id from authenticated user
+        tenant_id = user.get("tenant_id")
+        if not tenant_id:
+            return RestResponse(
+                code=ErrorCode.AUTH_ERROR,
+                msg="User does not have a valid tenant ID"
+            )
+        # await check_limit_and_record(client=f"tenant-id-{tenant_id}", resource=f"tts")
+
+        # Generate lyrics
+        result = await twitter_tts_service.generate_lyrics_from_twitter_url(
+            twitter_url=request.twitter_url,
+            tenant_id=tenant_id
+        )
+
+        # Convert to response DTO
+        response = GenerateLyricsResponse(**result)
+
+        return RestResponse(data=response)
+
+    except ValueError as e:
+        logger.error(f"Validation error in lyrics generation: {str(e)}")
+        return RestResponse(
+            code=ErrorCode.INVALID_PARAMETERS,
+            msg=str(e)
+        )
+    except CustomAgentException as e:
+        logger.error(f"Error in lyrics generation: {str(e)}", exc_info=True)
+        return RestResponse(code=e.error_code, msg=e.message)
+    except Exception as e:
+        logger.error(f"Unexpected error in lyrics generation: {str(e)}", exc_info=True)
+        return RestResponse(
+            code=ErrorCode.INTERNAL_ERROR,
+            msg=str(e)
+        )
+
+
+@router.post("/api/twitter-tts/generate-music", response_model=RestResponse[GenerateMusicResponse], summary="Generate music from lyrics and style")
+async def generate_music_from_lyrics(
+    request: GenerateMusicRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Generate music from lyrics and style using TTS service
+
+    - **lyrics**: Lyrics text to generate music from
+    - **style**: Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)
+    - **voice**: TTS voice to use (alloy, echo, fable, onyx, nova, shimmer) - defaults to "alloy"
+    - **model**: TTS model to use (tts-1, tts-1-hd) - defaults to "tts-1"
+    - **response_format**: Audio format (mp3, opus, aac, flac) - defaults to "mp3"
+    - **speed**: Speech speed (0.25 to 4.0) - defaults to 1.0
+
+    Note: Tenant ID is automatically extracted from authenticated user
+    """
+    try:
+        # Get tenant_id from authenticated user
+        tenant_id = user.get("tenant_id")
+        if not tenant_id:
+            return RestResponse(
+                code=ErrorCode.AUTH_ERROR,
+                msg="User does not have a valid tenant ID"
+            )
+        # await check_limit_and_record(client=f"tenant-id-{tenant_id}", resource=f"tts")
+        lyrics = request.lyrics
+        if len(lyrics) > 550:
+            lyrics = lyrics[:550]
+
+        # Generate music
+        result = await twitter_tts_service.generate_music_from_lyrics(
+            lyrics=lyrics,
+            style=request.style,
+            tenant_id=tenant_id,
+            voice=request.voice,
+            model=request.model,
+            response_format=request.response_format,
+            speed=request.speed,
+            reference_audio_url=request.reference_audio_url
+        )
+
+        # Convert to response DTO
+        response = GenerateMusicResponse(**result)
+
+        return RestResponse(data=response)
+
+    except ValueError as e:
+        logger.error(f"Validation error in music generation: {str(e)}")
+        return RestResponse(
+            code=ErrorCode.INVALID_PARAMETERS,
+            msg=str(e)
+        )
+    except CustomAgentException as e:
+        logger.error(f"Error in music generation: {str(e)}", exc_info=True)
+        return RestResponse(code=e.error_code, msg=e.message)
+    except Exception as e:
+        logger.error(f"Unexpected error in music generation: {str(e)}", exc_info=True)
         return RestResponse(
             code=ErrorCode.INTERNAL_ERROR,
             msg=get_error_message(ErrorCode.INTERNAL_ERROR)

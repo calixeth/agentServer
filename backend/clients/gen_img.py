@@ -1,6 +1,7 @@
 import logging
 
 import aiohttp
+from openai import AsyncOpenAI
 
 from config import SETTINGS
 from infra.file import download_and_upload_image
@@ -54,3 +55,20 @@ async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
     except Exception as e:
         logging.error(f"gen_img error: {e}", exc_info=True)
     return None
+
+client = AsyncOpenAI(
+        api_key=f"{SETTINGS.TZ_API_KEY}",
+        base_url=f"{SETTINGS.TZ_HOST}/v1"
+    )
+
+async def gen_text(prompt: str) -> str | None:
+    resp = await client.chat.completions.create(
+        model="grok-3",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    return resp.choices[0].message.content

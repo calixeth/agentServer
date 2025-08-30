@@ -288,3 +288,40 @@ class DigitalHuman(BaseModel):
     mp3_url: str = Field(description="mp3 url", default="")
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
     country: Country = Field(description="country")
+
+
+# New DTOs for lyrics and music generation APIs
+class GenerateLyricsRequest(BaseModel):
+    """Request for generating lyrics from Twitter URL"""
+    twitter_url: str = Field(description="Twitter/X post URL")
+
+
+class GenerateLyricsResponse(BaseModel):
+    """Response for lyrics generation"""
+    lyrics: str = Field(description="Generated lyrics text")
+    title: str = Field(description="Extracted title from lyrics", default="")
+    twitter_url: str = Field(description="Original Twitter URL")
+    generated_at: str = Field(description="Generation timestamp")
+
+
+class GenerateMusicRequest(BaseModel):
+    """Request for generating music from lyrics"""
+    lyrics: str = Field(description="Lyrics text to generate music from")
+    style: str = Field(description="Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
+    reference_audio_url: str = Field(description="Audio url")
+    voice: str = Field(description="TTS voice to use", default="alloy")
+    model: str = Field(description="TTS model to use", default="tts-1")
+    response_format: str = Field(description="Audio format", default="mp3")
+    speed: float = Field(description="Speech speed", default=1.0, ge=0.25, le=4.0)
+
+
+class GenerateMusicResponse(BaseModel):
+    """Response for music generation"""
+    audio_url: str = Field(description="Generated music audio URL")
+    lyrics: str = Field(description="Original lyrics used")
+    style: str = Field(description="Music style used")
+    voice: str = Field(description="TTS voice used")
+    model: str = Field(description="TTS model used")
+    response_format: str = Field(description="Audio format")
+    speed: float = Field(description="Speech speed used")
+    generated_at: str = Field(description="Generation timestamp")

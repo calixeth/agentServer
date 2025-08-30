@@ -1,3 +1,5 @@
+import asyncio
+
 import motor.motor_asyncio
 
 from config import SETTINGS
@@ -76,8 +78,20 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None,
-                                         task_type: str = None, style: str = None, username: str = None) -> \
+async def twitter_tts_task_get_by_username_and_url(username: str, twitter_url: str, tenant_id: str) -> TwitterTTSTask | None:
+    """Get Twitter TTS task by username, twitter_url and tenant_id for deduplication"""
+    ret = await twitter_tts_task_col.find_one({
+        "username": username,
+        "twitter_url": twitter_url,
+        "tenant_id": tenant_id
+    })
+    if ret:
+        return TwitterTTSTask(**ret)
+    else:
+        return None
+
+
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, task_type: str = None, style: str = None, username: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size

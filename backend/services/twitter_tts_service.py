@@ -1,15 +1,17 @@
+import json
 import logging
 import re
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from agent.prompt.tts import TTS_PROMPT, SONG_PROMPT
+from agent.prompt.tts import TTS_PROMPT, SONG_PROMPT, LYRICS_PROMPT
+from clients.gen_img import gen_text
 from config import SETTINGS
 from entities.bo import TwitterTTSRequestBO
 from entities.dto import TwitterTTSTask, TaskStatus, TaskType, TwitterTTSTaskListResponse
 from infra.db import twitter_tts_task_save, twitter_tts_task_get_by_id, twitter_tts_task_get_by_tenant, twitter_tts_task_get_pending
-from infra.db import predefined_voice_get_all, predefined_voice_get_by_id
+from infra.db import predefined_voice_get_all, predefined_voice_get_by_id, twitter_tts_task_get_by_username_and_url
 from clients.twitter_client import get_tweet_summary
 from clients.tts_client import text_to_speech_svc, call_model
 from infra.file import upload_audio_file
@@ -47,9 +49,20 @@ async def create_twitter_tts_task(request: TwitterTTSRequestBO) -> TwitterTTSTas
         request: Twitter TTS request business object
         
     Returns:
-        Created TwitterTTSTask
+        Created TwitterTTSTask or existing one if duplicate
     """
     try:
+        # Check if task already exists for the same username + twitter_url + tenant_id
+        if request.username:
+            existing_task = await twitter_tts_task_get_by_username_and_url(
+                username=request.username,
+                twitter_url=request.twitter_url,
+                tenant_id=request.tenant_id
+            )
+            if existing_task:
+                logger.info(f"Task already exists for username {request.username} and URL {request.twitter_url}, returning existing task {existing_task.task_id}")
+                return existing_task
+        
         # Extract tweet ID from URL
         tweet_id = extract_tweet_id_from_url(request.twitter_url) or ""
         # if not tweet_id:
@@ -492,4 +505,95 @@ async def get_predefined_voice_by_id(voice_id: str):
         return await predefined_voice_get_by_id(voice_id)
     except Exception as e:
         logger.error(f"Error getting predefined voice {voice_id}: {e}", exc_info=True)
-        return None 
+        return None
+
+
+async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str) -> dict:
+    """
+    Generate lyrics from Twitter URL by analyzing user profile and recent tweets
+    
+    Args:
+        twitter_url: Twitter/X post URL
+        tenant_id: Tenant ID for the request
+        
+    Returns:
+        Dictionary containing generated lyrics and metadata
+    """
+    try:
+
+        prompt = LYRICS_PROMPT.replace("{twitter_url}", twitter_url)
+        text = await gen_text(prompt)
+        data = text.split("##")
+
+        if not data or len(data) < 2:
+            return {}
+
+        return {
+            "lyrics": data[0].lstrip(),
+            "title": data[1].lstrip(),
+            "twitter_url": twitter_url,
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating lyrics from Twitter URL: {e}", exc_info=True)
+        raise
+
+async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str, 
+                                   voice: str = "alloy", model: str = "tts-1", 
+                                   response_format: str = "mp3", speed: float = 1.0,
+                                    reference_audio_url: str="") -> dict:
+    """
+    Generate music from lyrics and style using TTS service
+    
+    Args:
+        lyrics: Generated lyrics text
+        style: Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)
+        tenant_id: Tenant ID for the request
+        voice: TTS voice to use
+        model: TTS model to use
+        response_format: Audio format
+        speed: Speech speed
+        
+    Returns:
+        Dictionary containing generated music URL and metadata
+    """
+    try:
+        logger.info(f"Generating music from lyrics with style: {style}")
+        
+        # Generate music using TTS service with music application
+        tts_kwargs = {
+            "text": None,
+            "prompt": lyrics,
+            "voice": voice,
+            "model": model,
+            "response_format": response_format,
+            "reference_audio_url": reference_audio_url,
+            "speed": speed,
+            "voice_application": SETTINGS.VOICE_APPLICATION_MUSIC
+        }
+        
+        audio_data = await text_to_speech_svc(**tts_kwargs)
+        if not audio_data:
+            raise Exception("Music generation failed")
+        
+        # Upload audio to object storage
+        file_extension = response_format
+        audio_url = await upload_audio_file(audio_data, file_extension)
+        if not audio_url:
+            raise Exception("Failed to upload audio file")
+        
+        return {
+            "audio_url": audio_url,
+            "lyrics": lyrics,
+            "style": style,
+            "voice": voice,
+            "model": model,
+            "response_format": response_format,
+            "speed": speed,
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating music from lyrics: {e}", exc_info=True)
+        raise 
