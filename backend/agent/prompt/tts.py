@@ -75,6 +75,7 @@ LYRICS_PROMPT = \
    * **Pop:** strong melodic feel, natural verse–pre-chorus–chorus–bridge transitions.
 5. Automatically extract and expand **4–5 Web3 jargon terms** from the reference content. After internal filtering, keep only words that fit the theme/mood/rhythm/narrative and are easy to sing/rap. Examples include: *holder, FUD, rug pull, DeFi, NFT, whale, gas, TGE, yield farming, to the moon, WAGMI, LFG, alpha, airdrop, staking, liquidity, slippage, APY, TVL, L2, rekt*, etc.
 6. Mimic the user’s tone and formatting style (e.g., ALL CAPS, emojis, hashtag style), while ensuring singability and rhyme. The **Hook (chorus)** must be catchy and repeatable multiple times.
+7. Output only the lyrics text. The lyrics MUST NOT contain any additional characters like “、”、"、'、’、* or similar. Keep each stanza between 1–5 lines to meet the character requirement.
 
 **Output Structure:**
 [SongTitle]##[Lyrics]

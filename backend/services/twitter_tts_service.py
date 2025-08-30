@@ -560,7 +560,12 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
     """
     try:
         logger.info(f"Generating music from lyrics with style: {style}")
-        
+
+        lyrics = (lyrics.replace("\n", "")
+            .replace("'", "")
+            .replace("*", "")
+            .replace("’", ""))
+
         # Generate music using TTS service with music application
         tts_kwargs = {
             "text": None,
