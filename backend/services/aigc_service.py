@@ -370,11 +370,15 @@ async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str, digital
 
 
 async def _task_gen_lyrics(task: AIGCTask):
-    result = await twitter_tts_service.generate_lyrics_from_twitter_url(
-        twitter_url=task.cover.input.x_link,
-        tenant_id=task.tenant_id,
-    )
-    response = GenerateLyricsResponse(**result)
+    try:
+        result = await twitter_tts_service.generate_lyrics_from_twitter_url(
+            twitter_url=task.cover.input.x_link,
+            tenant_id=task.tenant_id,
+        )
+        response = GenerateLyricsResponse(**result)
+    except Exception as e:
+        logging.exception(f"failed to generate lyrics {e}")
+        response = None
 
     cur_task = await aigc_task_get_by_id(task.task_id)
     if response:

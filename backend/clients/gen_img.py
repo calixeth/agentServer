@@ -56,10 +56,12 @@ async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
         logging.error(f"gen_img error: {e}", exc_info=True)
     return None
 
+
 client = AsyncOpenAI(
-        api_key=f"{SETTINGS.TZ_API_KEY}",
-        base_url=f"{SETTINGS.TZ_HOST}/v1"
-    )
+    api_key=SETTINGS.PROXY_OPENAI_API_KEY,
+    base_url=SETTINGS.PROXY_OPENAI_BASE_URL
+)
+
 
 async def gen_text(prompt: str) -> str | None:
     resp = await client.chat.completions.create(
