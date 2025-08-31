@@ -9,7 +9,7 @@ from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
     V_FIGURE_IMAGE_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
-from clients.openai_gen_img import gpt_image_1_gen_img_svc, gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
+from clients.openai_gen_img import gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
@@ -140,18 +140,18 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    logging.info(f"task {task.task_id} generating first_frame img")
-    first_frame_imgs_task = gpt_image_1_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
-                                                    prompt=FIRST_FRAME_IMG_PROMPT)
-    logging.info(f"task {task.task_id} generating dance img")
+    first_frame_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400],
+                                                     prompt=FIRST_FRAME_IMG_PROMPT,
+                                                     scenario="first_frame")
     dance_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
-                                               prompt=V_DANCE_IMAGE_PROMPT)
-    logging.info(f"task {task.task_id} generating lyrics img")
+                                               prompt=V_DANCE_IMAGE_PROMPT,
+                                               scenario="dance")
     sing_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
-                                              prompt=V_SING_IMAGE_PROMPT)
-    logging.info(f"task {task.task_id} generating figure img")
+                                              prompt=V_SING_IMAGE_PROMPT,
+                                              scenario="sing")
     figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
-                                          prompt=V_FIGURE_IMAGE_PROMPT)
+                                          prompt=V_FIGURE_IMAGE_PROMPT,
+                                          scenario="figure")
 
     first_frame_imgs, dance_imgs, sing_imgs, figure_imgs = await asyncio.gather(
         first_frame_imgs_task,
@@ -169,8 +169,7 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
 
     dance_url = ""
     if dance_imgs and dance_imgs.data:
-        # dance_url = await s3_upload_openai_img(dance_imgs.data[0])
-        dance_url = dance_imgs.data[0].url
+        dance_url = await s3_upload_openai_img(dance_imgs.data[0])
         if not dance_url:
             logging.info(f"dance_url upload error")
 
@@ -182,7 +181,8 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
 
     figure_url = ""
     if figure_imgs and figure_imgs.data:
-        figure_url = await s3_upload_openai_img(figure_imgs.data[0])
+        # figure_url = await s3_upload_openai_img(figure_imgs.data[0])
+        figure_url = figure_imgs.data[0].url
         if not figure_url:
             logging.info(f"figure_url upload error")
 

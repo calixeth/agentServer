@@ -16,6 +16,9 @@ async def check_limit_and_record(client: str, resource: str):
         return_document=True
     )
 
+    if "limit" in usage:
+        limit = usage["limit"]
+
     count = usage["count"] + 1 if usage else 1
 
     if count > limit:
