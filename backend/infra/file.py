@@ -12,7 +12,7 @@ from config import SETTINGS
 from entities.bo import FileBO
 from infra.db import file_col
 
-bucket_name = "deepweb3"
+bucket_name = "web3ai"
 
 
 async def img_url_to_base64(image_url):

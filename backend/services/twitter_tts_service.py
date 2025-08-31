@@ -1,4 +1,4 @@
-import json
+import logging
 import logging
 import re
 import uuid
@@ -7,13 +7,14 @@ from typing import Optional
 
 from agent.prompt.tts import TTS_PROMPT, SONG_PROMPT, LYRICS_PROMPT
 from clients.gen_img import gen_text
+from clients.tts_client import text_to_speech_svc, call_model
+from clients.twitter_client import get_tweet_summary
 from config import SETTINGS
 from entities.bo import TwitterTTSRequestBO
 from entities.dto import TwitterTTSTask, TaskStatus, TaskType, TwitterTTSTaskListResponse
-from infra.db import twitter_tts_task_save, twitter_tts_task_get_by_id, twitter_tts_task_get_by_tenant, twitter_tts_task_get_pending
 from infra.db import predefined_voice_get_all, predefined_voice_get_by_id, twitter_tts_task_get_by_username_and_url
-from clients.twitter_client import get_tweet_summary
-from clients.tts_client import text_to_speech_svc, call_model
+from infra.db import twitter_tts_task_save, twitter_tts_task_get_by_id, twitter_tts_task_get_by_tenant, \
+    twitter_tts_task_get_pending, digital_human_save, digital_human_get_by_id
 from infra.file import upload_audio_file
 
 logger = logging.getLogger(__name__)
@@ -60,14 +61,15 @@ async def create_twitter_tts_task(request: TwitterTTSRequestBO) -> TwitterTTSTas
                 tenant_id=request.tenant_id
             )
             if existing_task:
-                logger.info(f"Task already exists for username {request.username} and URL {request.twitter_url}, returning existing task {existing_task.task_id}")
+                logger.info(
+                    f"Task already exists for username {request.username} and URL {request.twitter_url}, returning existing task {existing_task.task_id}")
                 return existing_task
-        
+
         # Extract tweet ID from URL
         tweet_id = extract_tweet_id_from_url(request.twitter_url) or ""
         # if not tweet_id:
         #     raise ValueError(f"Invalid Twitter URL: {request.twitter_url}")
-        
+
         # Create task
         task = TwitterTTSTask(
             task_id=str(uuid.uuid4()),
@@ -85,15 +87,16 @@ async def create_twitter_tts_task(request: TwitterTTSRequestBO) -> TwitterTTSTas
             style=request.style,
             status=TaskStatus.IN_PROGRESS,
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
+            digital_human_id=request.digital_human_id,
         )
-        
+
         # Save to database
         await twitter_tts_task_save(task)
         logger.info(f"Created Twitter TTS task {task.task_id} for tweet {tweet_id}")
-        
+
         return task
-        
+
     except Exception as e:
         logger.error(f"Error creating Twitter TTS task: {e}", exc_info=True)
         raise
@@ -111,13 +114,13 @@ async def process_twitter_tts_task(task: TwitterTTSTask) -> bool:
     """
     try:
         logger.info(f"Processing Twitter TTS task {task.task_id} with type {task.task_type}")
-        
+
         # Update task status
         task.status = TaskStatus.IN_PROGRESS
         task.processing_started_at = datetime.now()
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
-        
+
         # Use strategy pattern to process based on task type
         if task.task_type == TaskType.TTS:
             return await _process_tts_task(task)
@@ -128,16 +131,16 @@ async def process_twitter_tts_task(task: TwitterTTSTask) -> bool:
         else:
             logger.error(f"Unknown task type: {task.task_type}")
             return False
-            
+
     except Exception as e:
         logger.error(f"Error processing Twitter TTS task {task.task_id}: {e}", exc_info=True)
-        
+
         # Update task with error
         task.status = TaskStatus.FAILED
         task.error_message = str(e)
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
-        
+
         return False
 
 
@@ -156,15 +159,15 @@ async def _process_tts_task(task: TwitterTTSTask) -> bool:
         tweet_summary = await get_tweet_summary(task.tweet_id)
         if not tweet_summary or 'content' not in tweet_summary:
             raise Exception(f"Failed to fetch tweet content for {task.tweet_id}")
-        
+
         tweet_content = tweet_summary['content']
         if not tweet_content.get('full_text'):
             raise Exception("Tweet content is empty")
-        
+
         # Extract tweet text
         tweet_text = tweet_content['full_text']
         task.tweet_content = tweet_text
-        
+
         # Step 2: Generate prompt
         prompt = TTS_PROMPT.format(posts=tweet_text)
 
@@ -181,25 +184,25 @@ async def _process_tts_task(task: TwitterTTSTask) -> bool:
             "response_format": task.response_format,
             "speed": task.speed
         }
-        
+
         # Add optional parameters if they exist
         if task.voice_id:
             tts_kwargs["voice_id"] = task.voice_id
         if task.audio_url_input:
             tts_kwargs["audio_url"] = task.audio_url_input
-            
+
         audio_data = await text_to_speech_svc(**tts_kwargs)
-        
+
         if not audio_data:
             raise Exception("TTS generation failed")
-        
+
         # Step 4: Upload audio to object storage
         file_extension = task.response_format
         audio_url = await upload_audio_file(audio_data, file_extension)
-        
+
         if not audio_url:
             raise Exception("Failed to upload audio file")
-        
+
         # Update task with success
         task.audio_url = audio_url
         task.status = TaskStatus.DONE
@@ -207,10 +210,10 @@ async def _process_tts_task(task: TwitterTTSTask) -> bool:
         task.completed_at = datetime.now()
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
-        
+
         logger.info(f"Successfully processed TTS task {task.task_id}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error processing TTS task {task.task_id}: {e}", exc_info=True)
         raise
@@ -231,15 +234,15 @@ async def _process_voice_clone_task(task: TwitterTTSTask) -> bool:
         tweet_summary = await get_tweet_summary(task.tweet_id)
         if not tweet_summary or 'content' not in tweet_summary:
             raise Exception(f"Failed to fetch tweet content for {task.tweet_id}")
-        
+
         tweet_content = tweet_summary['content']
         if not tweet_content.get('full_text'):
             raise Exception("Tweet content is empty")
-        
+
         # Extract tweet text
         tweet_text = tweet_content['full_text']
         task.tweet_content = tweet_text
-        
+
         # Step 2: Generate prompt for voice cloning
         prompt = TTS_PROMPT.format(posts=tweet_text)
         message = await call_model(prompt)
@@ -250,7 +253,7 @@ async def _process_voice_clone_task(task: TwitterTTSTask) -> bool:
         # Step 3: Generate voice cloned audio
         if not task.audio_url_input:
             raise Exception("Audio URL is required for voice cloning")
-        
+
         voice_clone_kwargs = {
             "text": message,
             "model": "speech-02-hd",  # Voice clone specific model
@@ -259,19 +262,19 @@ async def _process_voice_clone_task(task: TwitterTTSTask) -> bool:
             "audio_url": task.audio_url_input,
             "voice_application": SETTINGS.VOICE_APPLICATION_CLONE
         }
-            
+
         audio_data = await text_to_speech_svc(**voice_clone_kwargs)
-        
+
         if not audio_data:
             raise Exception("Voice clone generation failed")
-        
+
         # Step 4: Upload audio to object storage
         file_extension = task.response_format or "mp3"
         audio_url = await upload_audio_file(audio_data, file_extension)
-        
+
         if not audio_url:
             raise Exception("Failed to upload audio file")
-        
+
         # Update task with success
         task.audio_url = audio_url
         task.status = TaskStatus.DONE
@@ -279,10 +282,15 @@ async def _process_voice_clone_task(task: TwitterTTSTask) -> bool:
         task.completed_at = datetime.now()
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
-        
+
+        digital_human = await digital_human_get_by_id(task.digital_human_id)
+        digital_human.ttl_title = title
+        digital_human.ttl_audio_url = audio_url
+        await digital_human_save(digital_human)
+
         logger.info(f"Successfully processed voice clone task {task.task_id}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error processing voice clone task {task.task_id}: {e}", exc_info=True)
         raise
@@ -306,24 +314,26 @@ async def _process_music_gen_task(task: TwitterTTSTask) -> bool:
             username = url_match.group(1)
         else:
             raise Exception("Username not provided and cannot be extracted from Twitter URL")
-        
+
         # Step 2: Get user context for music generation
         from clients.twitter_client import get_user_music_generation_context, generate_music_prompt_from_context
-        
+
         logger.info(f"Getting user context for music generation: {username}")
         user_context = await get_user_music_generation_context(username)
-        
+
         if not user_context:
             raise Exception(f"Failed to get user context for {username}, falling back to tweet-based generation")
-        
+
         # Step 3: Generate music prompt based on user context and style
         style, profile_summary, tweets_summary = await generate_music_prompt_from_context(user_context, task.style)
-        music_prompt = SONG_PROMPT.format(style=style, content=profile_summary+ '\n' + tweets_summary)
-        logger.info(f"Generated music prompt for user {username} with style '{task.style}': {len(music_prompt)} characters")
-        
+        music_prompt = SONG_PROMPT.format(style=style, content=profile_summary + '\n' + tweets_summary)
+        logger.info(
+            f"Generated music prompt for user {username} with style '{task.style}': {len(music_prompt)} characters")
+
         # Step 4: Generate music using the enhanced prompt
         # For now, we'll use TTS as a placeholder, but this would be replaced with actual music generation
-        logger.info(f"Music generation for task {task.task_id} with enhanced user context - using placeholder TTS generation")
+        logger.info(
+            f"Music generation for task {task.task_id} with enhanced user context - using placeholder TTS generation")
 
         message = await call_model(music_prompt)
         # Use the enhanced prompt for TTS generation
@@ -337,19 +347,19 @@ async def _process_music_gen_task(task: TwitterTTSTask) -> bool:
             "reference_audio_url": task.audio_url_input,
             "voice_application": SETTINGS.VOICE_APPLICATION_MUSIC
         }
-        
+
         audio_data = await text_to_speech_svc(**tts_kwargs)
-        
+
         if not audio_data:
             raise Exception("Music generation failed")
-        
+
         # Step 5: Upload audio to object storage
         file_extension = task.response_format or "mp3"
         audio_url = await upload_audio_file(audio_data, file_extension)
-        
+
         if not audio_url:
             raise Exception("Failed to upload audio file")
-        
+
         # Update task with success
         task.audio_url = audio_url
         task.status = TaskStatus.DONE
@@ -357,10 +367,10 @@ async def _process_music_gen_task(task: TwitterTTSTask) -> bool:
         task.completed_at = datetime.now()
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
-        
+
         logger.info(f"Successfully processed music generation task {task.task_id} for user {username}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error processing music generation task {task.task_id}: {e}", exc_info=True)
         raise
@@ -384,13 +394,13 @@ async def get_twitter_tts_task(task_id: str) -> Optional[TwitterTTSTask]:
 
 
 async def get_twitter_tts_tasks_by_tenant(
-    tenant_id: str, 
-    page: int = 1, 
-    page_size: int = 20, 
-    status: Optional[str] = None,
-    task_type: Optional[str] = None,
-    style: Optional[str] = None,
-    username: Optional[str] = None
+        tenant_id: str,
+        page: int = 1,
+        page_size: int = 20,
+        status: Optional[str] = None,
+        task_type: Optional[str] = None,
+        style: Optional[str] = None,
+        username: Optional[str] = None
 ) -> TwitterTTSTaskListResponse:
     """
     Get Twitter TTS tasks by tenant with pagination
@@ -408,15 +418,16 @@ async def get_twitter_tts_tasks_by_tenant(
         TwitterTTSTaskListResponse
     """
     try:
-        tasks, total = await twitter_tts_task_get_by_tenant(tenant_id, page, page_size, status, task_type, style, username)
-        
+        tasks, total = await twitter_tts_task_get_by_tenant(tenant_id, page, page_size, status, task_type, style,
+                                                            username)
+
         return TwitterTTSTaskListResponse(
             tasks=tasks,
             total=total,
             page=page,
             page_size=page_size
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting Twitter TTS tasks for tenant {tenant_id}: {e}", exc_info=True)
         raise
@@ -451,26 +462,26 @@ async def retry_failed_twitter_tts_task(task_id: str) -> bool:
         if not task:
             logger.error(f"Task {task_id} not found")
             return False
-        
+
         if task.status != TaskStatus.FAILED:
             logger.warning(f"Task {task_id} is not in failed status: {task.status}")
             return False
-        
+
         # Reset task for retry
         task.status = TaskStatus.IN_PROGRESS
         task.error_message = None
         task.processing_started_at = None
         task.completed_at = None
         task.updated_at = datetime.now()
-        
+
         await twitter_tts_task_save(task)
         logger.info(f"Retry initiated for Twitter TTS task {task_id}")
-        
+
         return True
-        
+
     except Exception as e:
         logger.error(f"Error retrying Twitter TTS task {task_id}: {e}", exc_info=True)
-        return False 
+        return False
 
 
 async def get_all_predefined_voices(category: str = None, is_active: bool = True) -> tuple[list, int]:
@@ -534,15 +545,16 @@ async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str) -> 
             "twitter_url": twitter_url,
             "generated_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error generating lyrics from Twitter URL: {e}", exc_info=True)
         raise
 
-async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str, 
-                                   voice: str = "alloy", model: str = "tts-1", 
-                                   response_format: str = "mp3", speed: float = 1.0,
-                                    reference_audio_url: str="") -> dict:
+
+async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
+                                     voice: str = "alloy", model: str = "tts-1",
+                                     response_format: str = "mp3", speed: float = 1.0,
+                                     reference_audio_url: str = "") -> dict:
     """
     Generate music from lyrics and style using TTS service
     
@@ -562,9 +574,9 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
         logger.info(f"Generating music from lyrics with style: {style}")
 
         lyrics = (lyrics.replace("\n", "")
-            .replace("'", "")
-            .replace("*", "")
-            .replace("’", ""))
+                  .replace("'", "")
+                  .replace("*", "")
+                  .replace("’", ""))
 
         # Generate music using TTS service with music application
         tts_kwargs = {
@@ -577,17 +589,17 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
             "speed": speed,
             "voice_application": SETTINGS.VOICE_APPLICATION_MUSIC
         }
-        
+
         audio_data = await text_to_speech_svc(**tts_kwargs)
         if not audio_data:
             raise Exception("Music generation failed")
-        
+
         # Upload audio to object storage
         file_extension = response_format
         audio_url = await upload_audio_file(audio_data, file_extension)
         if not audio_url:
             raise Exception("Failed to upload audio file")
-        
+
         return {
             "audio_url": audio_url,
             "lyrics": lyrics,
@@ -598,7 +610,7 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
             "speed": speed,
             "generated_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error generating music from lyrics: {e}", exc_info=True)
-        raise 
+        raise

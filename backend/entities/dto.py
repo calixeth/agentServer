@@ -256,6 +256,7 @@ class TwitterTTSTask(BaseModel):
     completed_at: datetime.datetime | None = Field(description="Completion time", default=None)
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
     style: Optional[str] = Field(default=None, description="Music style for music generation tasks")
+    digital_human_id: Optional[str] = Field(default=None, description="Digital human ID")
 
 
 class TwitterTTSTaskListResponse(BaseModel):
@@ -358,6 +359,8 @@ class DigitalHuman(BaseModel):
     music_model: str = Field(description="TTS model used", default="")
     music_response_format: str = Field(description="Audio format", default="")
     music_speed: float = Field(description="Speech speed used", default=-1)
+    ttl_title: str = Field(description="ttl title", default="")
+    ttl_audio_url: str = Field(description="TTL audio_url", default="")
 
 
 class GenerateLyricsResponse(BaseModel):

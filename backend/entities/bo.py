@@ -75,3 +75,4 @@ class TwitterTTSRequestBO(BaseModel):
     audio_url: Optional[str] = Field(description="Audio URL")
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
     style: Optional[str] = Field(default=None, description="Music style for music generation tasks")
+    digital_human_id: Optional[str] = Field(default=None, description="Digital human ID")

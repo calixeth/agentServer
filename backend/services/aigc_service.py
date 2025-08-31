@@ -349,11 +349,11 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
 
     await digital_human_save(bo)
 
-    background.add_task(voice_ttl_task, req, user_dict, username)
+    background.add_task(voice_ttl_task, req, user_dict, username, id)
     return bo
 
 
-async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str):
+async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str, digital_human_id: str):
     tenant_id = user.get("tenant_id")
     voice_id = req.voice_id or "Abbess"
 
@@ -363,7 +363,8 @@ async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str):
             voice_id=voice_id,
             username=username,
             tenant_id=tenant_id,
-            audio_url=None
+            audio_url=None,
+            digital_human_id=digital_human_id,
         )
         await create_twitter_tts_task(request_bo)
 
