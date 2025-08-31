@@ -122,15 +122,48 @@ class GenerateLyricsReq(BaseModel):
     task_id: str = Field(description="task_id")
 
 
+class GenerateMusicRequest(BaseModel):
+    """Request for generating music from lyrics"""
+    lyrics: str = Field(description="Lyrics text to generate music from")
+    style: str = Field(
+        description="Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
+    reference_audio_url: str = Field(description="Audio url")
+    voice: str = Field(description="TTS voice to use", default="alloy")
+    model: str = Field(description="TTS model to use", default="tts-1")
+    response_format: str = Field(description="Audio format", default="mp3")
+    speed: float = Field(description="Speech speed", default=1.0, ge=0.25, le=4.0)
+
+
+class GenMusicReq(GenerateMusicRequest):
+    """"""
+    task_id: str = Field(description="task_id")
+
+
 class GenerateLyricsResp(BaseModel):
     """Response for lyrics generation"""
     lyrics: str = Field(description="Generated lyrics text")
     title: str = Field(description="Extracted title from lyrics", default="")
 
 
+class GenerateMusicResp(BaseModel):
+    """Response for music generation"""
+    audio_url: str = Field(description="Generated music audio URL")
+    lyrics: str = Field(description="Original lyrics used")
+    style: str = Field(description="Music style used")
+    voice: str = Field(description="TTS voice used")
+    model: str = Field(description="TTS model used")
+    response_format: str = Field(description="Audio format")
+    speed: float = Field(description="Speech speed used")
+
+
 class Lyrics(SubTask):
     input: GenerateLyricsReq
     output: GenerateLyricsResp | None = Field(description="lyrics", default=None)
+
+
+class Music(SubTask):
+    input: GenMusicReq
+    output: GenerateMusicResp | None = Field(description="lyrics", default=None)
 
 
 class VideoKeyType(StrEnum):
@@ -169,6 +202,7 @@ class AIGCTask(BaseModel):
     created_at: datetime.datetime = Field(description="created_at")
     cover: Cover | None = Field(description="cover", default=None)
     lyrics: Lyrics | None = Field(description="lyrics", default=None)
+    music: Music | None = Field(description="music", default=None)
     videos: list[Video] = Field(description="videos", default_factory=list)
 
     def check_cover(self):
@@ -296,6 +330,9 @@ class DigitalVideo(BaseModel):
     view_url: str = Field(description="video url")
 
 
+# New DTOs for lyrics and music generation APIs
+
+
 class DigitalHuman(BaseModel):
     id: str = Field(description="Digital human ID")
     from_task_id: str = Field(description="from_task_id")
@@ -310,12 +347,17 @@ class DigitalHuman(BaseModel):
     mp3_url: str = Field(description="mp3 url", default="")
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
     country: Country = Field(description="country")
-    dance_image: str = Field(description="dance image", default=None)
-    sing_image: str = Field(description="sing_image", default=None)
-    figure_image: str = Field(description="figure image", default=None)
-
-
-# New DTOs for lyrics and music generation APIs
+    dance_image: str = Field(description="dance image", default="")
+    sing_image: str = Field(description="sing_image", default="")
+    figure_image: str = Field(description="figure image", default="")
+    lyrics: str = Field(description="Generated lyrics text", default="")
+    lyrics_title: str = Field(description="Extracted title from lyrics", default="")
+    music_audio_url: str = Field(description="Generated music audio URL", default="")
+    music_style: str = Field(description="Music style used", default="")
+    music_voice: str = Field(description="TTS voice used", default="")
+    music_model: str = Field(description="TTS model used", default="")
+    music_response_format: str = Field(description="Audio format", default="")
+    music_speed: float = Field(description="Speech speed used", default=-1)
 
 
 class GenerateLyricsResponse(BaseModel):
@@ -324,18 +366,6 @@ class GenerateLyricsResponse(BaseModel):
     title: str = Field(description="Extracted title from lyrics", default="")
     twitter_url: str = Field(description="Original Twitter URL")
     generated_at: str = Field(description="Generation timestamp")
-
-
-class GenerateMusicRequest(BaseModel):
-    """Request for generating music from lyrics"""
-    lyrics: str = Field(description="Lyrics text to generate music from")
-    style: str = Field(
-        description="Music style (pop, rock, jazz, classical, electronic, folk, blues, country, hip_hop, ambient, custom)")
-    reference_audio_url: str = Field(description="Audio url")
-    voice: str = Field(description="TTS voice to use", default="alloy")
-    model: str = Field(description="TTS model to use", default="tts-1")
-    response_format: str = Field(description="Audio format", default="mp3")
-    speed: float = Field(description="Speech speed", default=1.0, ge=0.25, le=4.0)
 
 
 class GenerateMusicResponse(BaseModel):

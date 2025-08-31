@@ -9,8 +9,8 @@ from fastapi import UploadFile
 from openai.types import Image
 
 from config import SETTINGS
-from infra.db import file_col
 from entities.bo import FileBO
+from infra.db import file_col
 
 bucket_name = "deepweb3"
 
@@ -76,7 +76,7 @@ async def upload_audio_file(audio_data: bytes, file_extension: str) -> str | Non
             file_extension = "mp3"
         file_uuid = str(uuid.uuid4())
         file_key = f"{file_uuid}.{file_extension}"
-        
+
         # Determine content type based on file extension
         content_type_map = {
             'mp3': 'audio/mpeg',
@@ -86,9 +86,9 @@ async def upload_audio_file(audio_data: bytes, file_extension: str) -> str | Non
             'wav': 'audio/wav',
             'ogg': 'audio/ogg'
         }
-        
+
         content_type = content_type_map.get(file_extension.lower(), 'audio/mpeg')
-        
+
         session = aioboto3.Session()
         async with session.client(
                 "s3",
@@ -103,13 +103,13 @@ async def upload_audio_file(audio_data: bytes, file_extension: str) -> str | Non
                 ACL="public-read",
                 ContentType=content_type
             )
-        
+
         audio_url = f"https://{bucket_name}.s3.ap-southeast-2.amazonaws.com/{file_key}"
-        
+
         logging.info(f"Audio file uploaded to S3: {file_key}, size: {len(audio_data)} bytes, type: {content_type}")
-        
+
         return audio_url
-        
+
     except Exception as e:
         logging.error(f"Error uploading audio file: {e}", exc_info=True)
         return None
