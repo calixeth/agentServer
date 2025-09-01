@@ -400,18 +400,22 @@ async def _task_gen_music(task: AIGCTask, req: GenMusicReq):
     if len(lyrics) > 550:
         lyrics = lyrics[:550]
 
-    result = await twitter_tts_service.generate_music_from_lyrics(
-        lyrics=lyrics,
-        style=req.style,
-        tenant_id=task.tenant_id,
-        voice=req.voice,
-        model=req.model,
-        response_format=req.response_format,
-        speed=req.speed,
-        reference_audio_url=req.reference_audio_url
-    )
+    try:
+        result = await twitter_tts_service.generate_music_from_lyrics(
+            lyrics=lyrics,
+            style=req.style,
+            tenant_id=task.tenant_id,
+            voice=req.voice,
+            model=req.model,
+            response_format=req.response_format,
+            speed=req.speed,
+            reference_audio_url=req.reference_audio_url
+        )
 
-    response = GenerateMusicResponse(**result)
+        response = GenerateMusicResponse(**result)
+    except Exception as e:
+        logging.exception(f"failed to generate music {e}")
+        response = None
 
     cur_task = await aigc_task_get_by_id(task.task_id)
     if response:
