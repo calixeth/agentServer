@@ -15,7 +15,7 @@ from config import SETTINGS
 from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
-    GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp
+    GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, TaskType
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
 from infra.file import s3_upload_openai_img
 from services import twitter_tts_service
@@ -325,6 +325,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
         username=username,
+        digital_name=username,
         cover_img=task.cover.output.cover_img_url,
         videos=videos,
         updated_at=datetime.datetime.now(),
@@ -363,8 +364,9 @@ async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str, digital
             voice_id=voice_id,
             username=username,
             tenant_id=tenant_id,
-            audio_url=None,
+            audio_url=req.mp3_url,
             digital_human_id=digital_human_id,
+            task_type=TaskType.VOICE_CLONE,
         )
         await create_twitter_tts_task(request_bo)
 
@@ -400,6 +402,7 @@ async def _task_gen_music(task: AIGCTask, req: GenMusicReq):
     if len(lyrics) > 550:
         lyrics = lyrics[:550]
 
+    result = None
     try:
         result = await twitter_tts_service.generate_music_from_lyrics(
             lyrics=lyrics,
@@ -418,7 +421,7 @@ async def _task_gen_music(task: AIGCTask, req: GenMusicReq):
         response = None
 
     cur_task = await aigc_task_get_by_id(task.task_id)
-    if response:
+    if response and result:
         cur_task.music.output = GenerateMusicResp(**result)
         cur_task.music.status = TaskStatus.DONE
         cur_task.music.done_at = datetime.datetime.now()

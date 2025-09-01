@@ -340,6 +340,7 @@ class DigitalHuman(BaseModel):
     from_tenant_id: str = Field(description="from_tenant_id")
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
+    digital_name: str = Field(description="Digital human name")
     username: str = Field(description="username")
     cover_img: str = Field(description="cover_img")
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
@@ -359,8 +360,8 @@ class DigitalHuman(BaseModel):
     music_model: str = Field(description="TTS model used", default="")
     music_response_format: str = Field(description="Audio format", default="")
     music_speed: float = Field(description="Speech speed used", default=-1)
-    ttl_title: str = Field(description="ttl title", default="")
-    ttl_audio_url: str = Field(description="TTL audio_url", default="")
+    tts_title: str = Field(description="tts title", default="")
+    tts_audio_url: str = Field(description="TTs audio_url", default="")
 
 
 class GenerateLyricsResponse(BaseModel):

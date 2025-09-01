@@ -16,6 +16,7 @@ from infra.db import predefined_voice_get_all, predefined_voice_get_by_id, twitt
 from infra.db import twitter_tts_task_save, twitter_tts_task_get_by_id, twitter_tts_task_get_by_tenant, \
     twitter_tts_task_get_pending, digital_human_save, digital_human_get_by_id
 from infra.file import upload_audio_file
+from utils import remove_square_brackets
 
 logger = logging.getLogger(__name__)
 
@@ -211,6 +212,11 @@ async def _process_tts_task(task: TwitterTTSTask) -> bool:
         task.updated_at = datetime.now()
         await twitter_tts_task_save(task)
 
+        digital_human = await digital_human_get_by_id(task.digital_human_id)
+        digital_human.tts_title = title
+        digital_human.tts_audio_url = audio_url
+        await digital_human_save(digital_human)
+
         logger.info(f"Successfully processed TTS task {task.task_id}")
         return True
 
@@ -284,8 +290,8 @@ async def _process_voice_clone_task(task: TwitterTTSTask) -> bool:
         await twitter_tts_task_save(task)
 
         digital_human = await digital_human_get_by_id(task.digital_human_id)
-        digital_human.ttl_title = title
-        digital_human.ttl_audio_url = audio_url
+        digital_human.tts_title = title
+        digital_human.tts_audio_url = audio_url
         await digital_human_save(digital_human)
 
         logger.info(f"Successfully processed voice clone task {task.task_id}")
@@ -579,6 +585,8 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
                   .replace("’", "")
                   .replace("[Chorus]", "")
                   .replace("[]", ""))
+
+        lyrics = remove_square_brackets(lyrics)
 
         # Generate music using TTS service with music application
         tts_kwargs = {
