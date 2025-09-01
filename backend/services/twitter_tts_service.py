@@ -580,6 +580,9 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
                   .replace("[Chorus]", "")
                   .replace("[]", ""))
 
+        if len(lyrics) > 550:
+            lyrics = lyrics[:550]
+
         # Generate music using TTS service with music application
         tts_kwargs = {
             "text": None,
