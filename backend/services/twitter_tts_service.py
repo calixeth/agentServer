@@ -576,7 +576,9 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
         lyrics = (lyrics.replace("\n", "")
                   .replace("'", "")
                   .replace("*", "")
-                  .replace("’", ""))
+                  .replace("’", "")
+                  .replace("[Chorus]", "")
+                  .replace("[]", ""))
 
         # Generate music using TTS service with music application
         tts_kwargs = {
