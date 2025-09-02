@@ -430,8 +430,6 @@ async def generate_music_from_lyrics(
             )
         # await check_limit_and_record(client=f"tenant-id-{tenant_id}", resource=f"tts")
         lyrics = request.lyrics
-        if len(lyrics) > 550:
-            lyrics = lyrics[:550]
 
         # Generate music
         result = await twitter_tts_service.generate_music_from_lyrics(
