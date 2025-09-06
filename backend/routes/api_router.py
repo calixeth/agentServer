@@ -88,7 +88,7 @@ async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
              response_model=RestResponse[AIGCTask]
              )
 async def save_base_info(req: BasicInfoReq, background_tasks: BackgroundTasks):
-    logging.info(f"save_base_info req: {req.model_dump_json()}")
+    logging.info(f"M save_base_info req: {req.model_dump_json()}")
     ret = await save_basic_info(req, background_tasks)
     return RestResponse(data=ret)
 
@@ -98,7 +98,7 @@ async def save_base_info(req: BasicInfoReq, background_tasks: BackgroundTasks):
              response_model=RestResponse[AIGCTask]
              )
 async def gen_scenario_video(req: GenVideoReq, background_tasks: BackgroundTasks):
-    logging.info(f"gen_scenario_video req: {req.model_dump_json()}")
+    logging.info(f"M gen_scenario_video req: {req.model_dump_json()}")
     ret = await gen_video_svc(req, background_tasks)
     return RestResponse(data=ret)
 
@@ -108,7 +108,7 @@ async def gen_scenario_video(req: GenVideoReq, background_tasks: BackgroundTasks
              response_model=RestResponse[AIGCTask]
              )
 async def gen_lyrics(req: GenerateLyricsReq, background_tasks: BackgroundTasks):
-    logging.info(f"gen_lyrics req: {req.model_dump_json()}")
+    logging.info(f"M gen_lyrics req: {req.model_dump_json()}")
     ret = await gen_lyrics_svc(req, background_tasks)
     return RestResponse(data=ret)
 
@@ -118,7 +118,7 @@ async def gen_lyrics(req: GenerateLyricsReq, background_tasks: BackgroundTasks):
              response_model=RestResponse[AIGCTask]
              )
 async def gen_music(req: GenMusicReq, background_tasks: BackgroundTasks):
-    logging.info(f"gen_music req: {req.model_dump_json()}")
+    logging.info(f"M gen_music req: {req.model_dump_json()}")
     ret = await gen_music_svc(req, background_tasks)
     return RestResponse(data=ret)
 
@@ -128,7 +128,7 @@ async def gen_music(req: GenMusicReq, background_tasks: BackgroundTasks):
              response_model=RestResponse[AIGCTask]
              )
 async def gen_twitter_audio(req: GenXAudioReq, background_tasks: BackgroundTasks):
-    logging.info(f"gen_twitter_audio req: {req.model_dump_json()}")
+    logging.info(f"M gen_twitter_audio req: {req.model_dump_json()}")
     ret = await gen_twitter_audio_svc(req, background_tasks)
     return RestResponse(data=ret)
 

@@ -17,7 +17,8 @@ from config import SETTINGS
 from middleware.auth_middleware import JWTAuthMiddleware
 from middleware.trace_middleware import TraceIdMiddleware
 from routes import api_router, voice_router, auth_router, twitter_tts_router
-from services.twitter_tts_processor import start_twitter_tts_processor, stop_twitter_tts_processor
+
+# from services.twitter_tts_processor import start_twitter_tts_processor, stop_twitter_tts_processor
 
 Otel.init()
 setup_logger()
@@ -25,12 +26,17 @@ setup_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await start_twitter_tts_processor()
-    logger.info("Twitter TTS background processor started successfully")
+    logging.info("Starting lifespan")
     yield
-    await stop_twitter_tts_processor()
-    logger.info("Twitter TTS background processor stopped successfully")
+    logging.info("Stopping lifespan")
 
+
+#     await start_twitter_tts_processor()
+#     logger.info("Twitter TTS background processor started successfully")
+#     yield
+#     await stop_twitter_tts_processor()
+#     logger.info("Twitter TTS background processor stopped successfully")
+#
 
 logger = logging.getLogger(__name__)
 app = FastAPI(lifespan=lifespan)

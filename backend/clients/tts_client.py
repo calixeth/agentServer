@@ -73,7 +73,7 @@ class OpenAITTSClient(BaseTTSClient):
             Audio data as bytes, or None if failed
         """
         try:
-            logging.info(f"Converting text to speech with OpenAI: {text[:50]}...")
+            logging.info(f"M Converting text to speech with OpenAI: {text[:50]}...")
             
             # Create arguments dict for OpenAI API call
             api_args = {
@@ -96,14 +96,14 @@ class OpenAITTSClient(BaseTTSClient):
             
             if response:
                 audio_data = response.content
-                logging.info(f"OpenAI TTS conversion successful, audio size: {len(audio_data)} bytes")
+                logging.info(f"M OpenAI TTS conversion successful, audio size: {len(audio_data)} bytes")
                 return audio_data
             else:
-                logging.error("OpenAI TTS conversion failed: no response")
+                logging.error("M OpenAI TTS conversion failed: no response")
                 return None
                 
         except Exception as e:
-            logging.error(f"OpenAI TTS conversion error: {e}", exc_info=True)
+            logging.error(f"M OpenAI TTS conversion error: {e}", exc_info=True)
             return None
     
     async def text_to_speech_base64(
@@ -174,7 +174,7 @@ class VoiceCloneTTSClient(BaseTTSClient):
 
             arguments = {}
             if text:
-                logging.info(f"Converting text to speech with voice cloning: {text[:50]}...")
+                logging.info(f"M Converting text to speech with voice cloning: {text[:50]}...")
                 arguments["text"] = text
             if kwargs.get("voice_id"):
                 arguments.update({

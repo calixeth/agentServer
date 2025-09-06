@@ -28,7 +28,7 @@ Based on this content, create **one** integrated Chinese short-video script (abo
 * No real personal names or gossip; focus on projects, protocols, chains, data, and mechanisms.
 
 **Output Requirements**
-
+**The output must be in {language}
 * Output **only one** complete spoken script text, divided into four paragraphs in the following order, with no extra explanations or titles:
 
   1. **Title** (one sentence + 1–2 hashtags, avoiding a marketing tone)
@@ -38,20 +38,21 @@ Based on this content, create **one** integrated Chinese short-video script (abo
 
 """
 
-SONG_PROMPT = \
-"""
-You are a lyricist. Create an original Web3-themed song lyric inspired by the style of {style} and the following reference content:
-{content}
-
-Formatting rules (STRICT):
-
-* Use a newline to separate each line of lyrics.
-* Use two newlines to add a pause between lines.
-* To add accompaniment, enclose the lyric line with double hash marks (`##` at the beginning and end).
-* Maximum 600 characters.
-
-Output ONLY the lyric text.
-"""
+# SONG_PROMPT = \
+# """
+# You are a lyricist. Create an original Web3-themed song lyric inspired by the style of {style} and the following reference content:
+# {content}
+#
+# Formatting rules (STRICT):
+#
+# * Use a newline to separate each line of lyrics.
+# * Use two newlines to add a pause between lines.
+# * To add accompaniment, enclose the lyric line with double hash marks (`##` at the beginning and end).
+# * Maximum 600 characters.
+# * The generated song voice must be {gender}
+#
+# Output ONLY the lyric text.
+# """
 
 LYRICS_PROMPT = \
 """
@@ -61,6 +62,7 @@ LYRICS_PROMPT = \
 
 1. Funny, satirical, and representing the personal value proposition.
 2. Maximum of 8 English words.
+3. Generate the lyrics in {Language}
 
 **Lyrics Requirements (internalized understanding, no explanation in output):**
 

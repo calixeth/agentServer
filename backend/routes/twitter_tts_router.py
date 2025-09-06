@@ -14,7 +14,7 @@ from middleware.auth_middleware import get_current_user
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
 
-router = APIRouter()
+router = APIRouter(include_in_schema=False)
 
 logger = logging.getLogger(__name__)
 

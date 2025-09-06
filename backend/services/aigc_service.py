@@ -44,7 +44,33 @@ async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) ->
 
     await aigc_task_save(task)
 
-    background.add_task(_task_gen_lyrics, task)
+    async def _task_gen_lyrics():
+        try:
+            result = await twitter_tts_service.generate_lyrics_from_twitter_url(
+                twitter_url=task.cover.input.x_link,
+                tenant_id=task.tenant_id,
+                lang=task.lang
+            )
+            response = GenerateLyricsResponse(**result)
+        except Exception as e:
+            logging.error(f"M failed to generate lyrics {e}")
+            response = None
+
+        cur_task = await aigc_task_get_by_id(task.task_id)
+        if response:
+            cur_task.lyrics.output = GenerateLyricsResp(
+                lyrics=response.lyrics,
+                title=response.title,
+            )
+            cur_task.lyrics.status = TaskStatus.DONE
+            cur_task.lyrics.done_at = datetime.datetime.now()
+            await aigc_task_save(cur_task)
+            return
+
+        cur_task.lyrics.status = TaskStatus.FAILED
+        await aigc_task_save(cur_task)
+
+    background.add_task(_task_gen_lyrics)
 
     return task
 
@@ -68,7 +94,41 @@ async def gen_music_svc(req: GenMusicReq, background: BackgroundTasks) -> AIGCTa
 
     await aigc_task_save(task)
 
-    background.add_task(_task_gen_music, task, req)
+    async def _task_gen_music():
+        lyrics = req.lyrics
+        if len(lyrics) > 550:
+            lyrics = lyrics[:550]
+
+        result = None
+        try:
+            result = await twitter_tts_service.generate_music_from_lyrics(
+                lyrics=lyrics,
+                style=req.style,
+                tenant_id=task.tenant_id,
+                voice=req.voice,
+                model=req.model,
+                response_format=req.response_format,
+                speed=req.speed,
+                reference_audio_url=req.reference_audio_url
+            )
+
+            response = GenerateMusicResponse(**result)
+        except Exception as e:
+            logging.exception(f"failed to generate music {e}")
+            response = None
+
+        cur_task = await aigc_task_get_by_id(task.task_id)
+        if response and result:
+            cur_task.music.output = GenerateMusicResp(**result)
+            cur_task.music.status = TaskStatus.DONE
+            cur_task.music.done_at = datetime.datetime.now()
+            await aigc_task_save(cur_task)
+            return
+
+        cur_task.music.status = TaskStatus.FAILED
+        await aigc_task_save(cur_task)
+
+    background.add_task(_task_gen_music)
 
     return task
 
@@ -106,7 +166,7 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
                 audio_url_input=task.voice_clone_url,
                 task_type=TaskType.VOICE_CLONE,
             )
-            tasks.append(voice_clone_svc(tts_task))
+            tasks.append(voice_clone_svc(tts_task, task.lang))
 
         try:
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -285,7 +345,7 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
 
 
 async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
-    logging.info(f"_task_video_svc req: {req.model_dump_json()}")
+    logging.info(f"M _task_video_svc req: {req.model_dump_json()}")
 
     if VideoKeyType.DANCE == req.key:
         prompt = V_DANCE_VIDEO_PROMPT
@@ -412,64 +472,3 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
 
     # background.add_task(_voice_ttl_task, req, user_dict, username, id)
     return bo
-
-
-async def _task_gen_lyrics(task: AIGCTask):
-    try:
-        result = await twitter_tts_service.generate_lyrics_from_twitter_url(
-            twitter_url=task.cover.input.x_link,
-            tenant_id=task.tenant_id,
-        )
-        response = GenerateLyricsResponse(**result)
-    except Exception as e:
-        logging.exception(f"failed to generate lyrics {e}")
-        response = None
-
-    cur_task = await aigc_task_get_by_id(task.task_id)
-    if response:
-        cur_task.lyrics.output = GenerateLyricsResp(
-            lyrics=response.lyrics,
-            title=response.title,
-        )
-        cur_task.lyrics.status = TaskStatus.DONE
-        cur_task.lyrics.done_at = datetime.datetime.now()
-        await aigc_task_save(cur_task)
-        return
-
-    cur_task.lyrics.status = TaskStatus.FAILED
-    await aigc_task_save(cur_task)
-
-
-async def _task_gen_music(task: AIGCTask, req: GenMusicReq):
-    lyrics = req.lyrics
-    if len(lyrics) > 550:
-        lyrics = lyrics[:550]
-
-    result = None
-    try:
-        result = await twitter_tts_service.generate_music_from_lyrics(
-            lyrics=lyrics,
-            style=req.style,
-            tenant_id=task.tenant_id,
-            voice=req.voice,
-            model=req.model,
-            response_format=req.response_format,
-            speed=req.speed,
-            reference_audio_url=req.reference_audio_url
-        )
-
-        response = GenerateMusicResponse(**result)
-    except Exception as e:
-        logging.exception(f"failed to generate music {e}")
-        response = None
-
-    cur_task = await aigc_task_get_by_id(task.task_id)
-    if response and result:
-        cur_task.music.output = GenerateMusicResp(**result)
-        cur_task.music.status = TaskStatus.DONE
-        cur_task.music.done_at = datetime.datetime.now()
-        await aigc_task_save(cur_task)
-        return
-
-    cur_task.music.status = TaskStatus.FAILED
-    await aigc_task_save(cur_task)

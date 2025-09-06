@@ -29,7 +29,7 @@ async def veo3_gen_video_svc_v2(img_url: str, prompt: str) -> GenVideoResp | Non
                         download_url=""
                     )
     except Exception as e:
-        logging.error(f"veo3_gen_video_svc_v2 error: {e}", exc_info=True)
+        logging.error(f"M veo3_gen_video_svc_v2 error: {e}", exc_info=True)
     return None
 
 
@@ -54,7 +54,7 @@ async def veo3_gen_video_svc_v3(img_url: str, prompt: str) -> GenVideoResp | Non
                         download_url=""
                     )
     except Exception as e:
-        logging.error(f"veo3_gen_video_svc_v2 error: {e}", exc_info=True)
+        logging.error(f"M veo3_gen_video_svc_v2 error: {e}", exc_info=True)
     return None
 
 
@@ -75,5 +75,5 @@ async def gen_img_svc_v3(img_url: str, prompt: str) -> str | None:
                 if "url" in img and img["url"]:
                     return img["url"]
     except Exception as e:
-        logging.error(f"veo3_gen_video_svc_v2 error: {e}", exc_info=True)
+        logging.error(f"M veo3_gen_video_svc_v2 error: {e}", exc_info=True)
     return None
