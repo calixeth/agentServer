@@ -1,4 +1,4 @@
-import asyncio
+import datetime
 
 import motor.motor_asyncio
 
@@ -17,14 +17,17 @@ digital_human_col = db["digital_human"]
 predefined_voice_col = db["predefined_voice"]
 resource_limits_col = db["resource_limits"]
 resource_usage_col = db["resource_usage"]
+logs_col = db["logs"]
 
 
 async def digital_human_save(digital_human: DigitalHuman):
-    await digital_human_col.replace_one({"username": digital_human.username}, digital_human.model_dump(), upsert=True)
+    digital_human.updated_at = datetime.datetime.now()
+    await digital_human_col.replace_one({"digital_name": digital_human.digital_name}, digital_human.model_dump(),
+                                        upsert=True)
 
 
-async def digital_human_get_by_username(username: str) -> DigitalHuman | None:
-    ret = await digital_human_col.find_one({"username": username})
+async def digital_human_get_by_digital_human(username: str) -> DigitalHuman | None:
+    ret = await digital_human_col.find_one({"digital_name": username})
     if ret:
         return DigitalHuman(**ret)
     else:
@@ -60,6 +63,7 @@ async def aigc_task_count_by_tenant_id(tenant_id: str) -> int:
 
 
 async def aigc_task_save(task: AIGCTask):
+    task.updated_at = datetime.datetime.now()
     await aigc_task_col.replace_one({"task_id": task.task_id}, task.model_dump(), upsert=True)
 
 
@@ -78,7 +82,8 @@ async def twitter_tts_task_get_by_id(task_id: str) -> TwitterTTSTask | None:
         return None
 
 
-async def twitter_tts_task_get_by_username_and_url(username: str, twitter_url: str, tenant_id: str) -> TwitterTTSTask | None:
+async def twitter_tts_task_get_by_username_and_url(username: str, twitter_url: str,
+                                                   tenant_id: str) -> TwitterTTSTask | None:
     """Get Twitter TTS task by username, twitter_url and tenant_id for deduplication"""
     ret = await twitter_tts_task_col.find_one({
         "username": username,
@@ -91,7 +96,8 @@ async def twitter_tts_task_get_by_username_and_url(username: str, twitter_url: s
         return None
 
 
-async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None, task_type: str = None, style: str = None, username: str = None) -> \
+async def twitter_tts_task_get_by_tenant(tenant_id: str, page: int = 1, page_size: int = 20, status: str = None,
+                                         task_type: str = None, style: str = None, username: str = None) -> \
         tuple[list[TwitterTTSTask], int]:
     """Get Twitter TTS tasks by tenant with pagination"""
     skip = (page - 1) * page_size

@@ -12,16 +12,17 @@ from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
 from clients.openai_gen_img import gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
-from entities.bo import TwitterBO, Country, TwitterTTSRequestBO
+from entities.bo import TwitterBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
-    GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, TaskType
-from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_username
+    GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
+    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman
+from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_digital_human
 from infra.file import s3_upload_openai_img
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
-from services.twitter_tts_service import create_twitter_tts_task
+from services.twitter_tts_service import voice_clone_svc
 
 
 async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) -> AIGCTask:
@@ -72,6 +73,81 @@ async def gen_music_svc(req: GenMusicReq, background: BackgroundTasks) -> AIGCTa
     return task
 
 
+async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) -> AIGCTask:
+    task = await aigc_task_get_by_id(req.task_id)
+
+    if task.audio:
+        sub_task = task.audio
+        sub_task.regenerate()
+        sub_task.input = req
+        sub_task.output = []
+    else:
+        task.audio = Audio(
+            sub_task_id=str(uuid.uuid4()),
+            input=req,
+            output=[],
+            created_at=datetime.datetime.now()
+        )
+
+    await aigc_task_save(task)
+
+    async def _bg_x_audio_task():
+        voice_id = "Abbess"
+
+        result = []
+        tasks = []
+        for twitter_url in req.x_tts_urls:
+            tts_task = TwitterTTSTask(
+                task_id=task.audio.sub_task_id or str(uuid.uuid4()),
+                tenant_id=task.tenant_id,
+                twitter_url=twitter_url,
+                voice_id=voice_id,
+                username=task.twitter_username,
+                audio_url_input=task.voice_clone_url,
+                task_type=TaskType.VOICE_CLONE,
+            )
+            tasks.append(voice_clone_svc(tts_task))
+
+        try:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for r in results:
+                if isinstance(r, Exception):
+                    logging.error(f"voice_clone_svc error: {r}")
+                elif r:
+                    result.append(r)
+        except Exception as e:
+            logging.exception("Error in voice clone tasks")
+
+        cur_task = await aigc_task_get_by_id(task.task_id)
+        sub_task = cur_task.audio
+        if result and len(result) == len(req.x_tts_urls):
+            sub_task.output = result
+            sub_task.status = TaskStatus.DONE
+            sub_task.done_at = datetime.datetime.now()
+            await aigc_task_save(cur_task)
+            return
+
+        sub_task.status = TaskStatus.FAILED
+        await aigc_task_save(cur_task)
+
+    background.add_task(_bg_x_audio_task)
+
+    return task
+
+
+async def save_basic_info(req: BasicInfoReq, background: BackgroundTasks) -> AIGCTask:
+    task = await aigc_task_get_by_id(req.task_id)
+
+    task.gender = req.gender
+    task.lang = req.lang
+    task.voice_clone_url = req.voice_clone_url
+    task.slogan = req.slogan
+    task.updated_at = datetime.datetime.now()
+    await aigc_task_save(task)
+
+    return task
+
+
 async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) -> AIGCTask:
     username = req.x_link.replace("https://x.com/", "")
 
@@ -87,6 +163,8 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
     #     img_base64 = await img_url_to_base64(req.img_url)
 
     task = await aigc_task_get_by_id(req.task_id)
+    task.twitter_link = req.x_link
+    task.twitter_username = username
 
     await check_limit_and_record(client=f"task-{task.task_id}", resource="gen-img")
 
@@ -140,6 +218,7 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
 
 
 async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
+    logging.info(f"M begin")
     first_frame_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400],
                                                      prompt=FIRST_FRAME_IMG_PROMPT,
                                                      scenario="first_frame")
@@ -161,30 +240,31 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
     )
 
     cur_task = await aigc_task_get_by_id(task.task_id)
+
     first_frame_url = ""
     if first_frame_imgs and first_frame_imgs.data:
         first_frame_url = await s3_upload_openai_img(first_frame_imgs.data[0])
-        if not first_frame_url:
-            logging.info(f"first_frame_url upload error")
+    if not first_frame_url:
+        logging.info(f"M first_frame_url upload error")
 
     dance_url = ""
     if dance_imgs and dance_imgs.data:
         dance_url = await s3_upload_openai_img(dance_imgs.data[0])
-        if not dance_url:
-            logging.info(f"dance_url upload error")
+    if not dance_url:
+        logging.info(f"M dance_url upload error")
 
     sing_url = ""
     if sing_imgs and sing_imgs.data:
         sing_url = await s3_upload_openai_img(sing_imgs.data[0])
-        if not sing_url:
-            logging.info(f"sing_url upload error")
+    if not sing_url:
+        logging.info(f"M sing_url upload error")
 
     figure_url = ""
     if figure_imgs and figure_imgs.data:
         # figure_url = await s3_upload_openai_img(figure_imgs.data[0])
         figure_url = figure_imgs.data[0].url
-        if not figure_url:
-            logging.info(f"figure_url upload error")
+    if not figure_url:
+        logging.info(f"M figure_url upload error")
 
     if first_frame_url and dance_url and sing_url and figure_url:
         cur_task.cover.output = GenCoverResp(
@@ -196,6 +276,7 @@ async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
         )
         cur_task.cover.status = TaskStatus.DONE
         cur_task.cover.done_at = datetime.datetime.now()
+        logging.info(f"M cur_cover_img_svc: {cur_task.cover.output.model_dump_json()}")
         await aigc_task_save(cur_task)
         return
 
@@ -268,17 +349,22 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
     if not task:
         raise_error("task not found")
 
-    task.check_cover()
-    x_link = task.cover.input.x_link
-    username = x_link.replace("https://x.com/", "")
+    task.check_all_ready()
 
-    org = await digital_human_get_by_username(username)
+    org = await digital_human_get_by_digital_human(task.twitter_username)
     update = False
     if org:
         if org.from_task_id != task.task_id:
             raise_error("username is repeated")
         else:
             update = True
+
+    if update:
+        id = org.id
+        created_at = org.created_at
+    else:
+        id = str(uuid.uuid4())
+        created_at = datetime.datetime.now()
 
     videos: list[DigitalVideo] = []
     for v in task.videos:
@@ -288,87 +374,44 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
                 view_url=v.output.view_url,
             ))
 
-    if not videos:
-        raise_error("video not found")
-    if not task.lyrics.output:
-        raise_error("lyrics not found")
-    if not task.music.output:
-        raise_error("music not found")
+    basic = TaskAndHuman(**task.model_dump())
 
-    if update:
-        id = org.id
-    else:
-        id = str(uuid.uuid4())
-
-    if not update:
-        created_at = datetime.datetime.now()
-    else:
-        created_at = org.created_at
-
-    description = ""
-    country = Country.USA
-    if req.description:
-        description = req.description
-    elif org and org.description:
-        description = org.description
-    else:
-        try:
-            user = await twitter_fetch_user_svc(username)
-            if user:
-                description = user.data.get("legacy", {}).get("description")
-                country = user.country
-        except Exception:
-            pass
+    audios = task.audio.output
+    if task.audio.history:
+        for h in task.audio.history:
+            audios.extend(Audio(**h).output)
 
     bo = DigitalHuman(
         id=id,
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
-        username=username,
-        digital_name=username,
+        digital_name=task.twitter_username,
         cover_img=task.cover.output.cover_img_url,
+        sing_image=task.cover.output.sing_first_frame_img_url,
+        figure_image=task.cover.output.figure_first_frame_img_url,
+        first_frame_image=task.cover.output.first_frame_img_url,
+        dance_image=task.cover.output.dance_first_frame_img_url,
         videos=videos,
         updated_at=datetime.datetime.now(),
         created_at=created_at,
-        mp3_url=req.mp3_url,
-        x_tts_urls=req.x_tts_urls,
-        gender=req.gender,
-        description=description,
-        country=country,
-        sing_image=task.cover.output.sing_first_frame_img_url,
-        figure_image=task.cover.output.figure_first_frame_img_url,
-        dance_image=task.cover.output.dance_first_frame_img_url,
-        lyrics=task.lyrics.output.lyrics,
-        lyrics_title=task.lyrics.output.title,
-        music_audio_url=task.music.output.audio_url,
-        music_style=task.music.output.style,
-        music_model=task.music.output.model,
-        music_voice=task.music.output.voice,
-        music_response_format=task.music.output.response_format,
-        music_speed=task.music.output.speed,
+        songs={
+            "lyrics": task.lyrics.output.lyrics,
+            "lyrics_title": task.lyrics.output.title,
+            "music_audio_url": task.music.output.audio_url,
+            "music_style": task.music.output.style,
+            "music_model": task.music.output.model,
+            "music_voice": task.music.output.voice,
+            "music_response_format": task.music.output.response_format,
+            "music_speed": task.music.output.speed,
+        },
+        audios=audios,
+        **basic.model_dump()
     )
 
     await digital_human_save(bo)
 
-    background.add_task(voice_ttl_task, req, user_dict, username, id)
+    # background.add_task(_voice_ttl_task, req, user_dict, username, id)
     return bo
-
-
-async def voice_ttl_task(req: AIGCPublishReq, user: dict, username: str, digital_human_id: str):
-    tenant_id = user.get("tenant_id")
-    voice_id = req.voice_id or "Abbess"
-
-    for twitter_url in req.x_tts_urls:
-        request_bo = TwitterTTSRequestBO(
-            twitter_url=twitter_url,
-            voice_id=voice_id,
-            username=username,
-            tenant_id=tenant_id,
-            audio_url=req.mp3_url,
-            digital_human_id=digital_human_id,
-            task_type=TaskType.VOICE_CLONE,
-        )
-        await create_twitter_tts_task(request_bo)
 
 
 async def _task_gen_lyrics(task: AIGCTask):

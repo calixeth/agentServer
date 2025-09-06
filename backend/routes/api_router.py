@@ -11,13 +11,13 @@ from common.error import raise_error
 from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsReq, GenMusicReq
+    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
-    digital_human_get_by_id, digital_human_get_by_username, aigc_task_delete_by_id, digital_human_col_delete_by_id
+    digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
-    gen_music_svc
+    gen_music_svc, save_basic_info, gen_twitter_audio_svc
 from services.twitter_service import twitter_fetch_user_svc
 
 logger = logging.getLogger(__name__)
@@ -53,13 +53,43 @@ async def upload_file(
     return RestResponse(data=bo)
 
 
+@router.post("/api/aigc_task/create",
+             summary="aigc_task/create",
+             response_model=RestResponse[AIGCTask]
+             )
+async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_user), ):
+    logging.info("M create aigc_task")
+    tenant_id = user.get("tenant_id", "")
+    count = await aigc_task_count_by_tenant_id(tenant_id)
+    if count > 0:
+        raise_error("Too many tasks")
+    task = AIGCTask(
+        task_id=str(uuid.uuid4()),
+        tenant_id=user.get("tenant_id", ""),
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
+    await aigc_task_col.insert_one(task.model_dump())
+    return RestResponse(data=task)
+
+
 @router.post("/api/aigc_task/gen_cover_img",
              summary="aigc_task/gen_cover_img",
              response_model=RestResponse[AIGCTask]
              )
 async def gen_cover_img(req: GenCoverImgReq, background_tasks: BackgroundTasks):
-    logging.info(f"gen_cover_img req: {req.model_dump_json()}")
+    logging.info(f"M gen_cover_img req: {req.model_dump_json()}")
     ret = await gen_cover_img_svc(req, background_tasks)
+    return RestResponse(data=ret)
+
+
+@router.post("/api/aigc_task/save_base_info",
+             summary="aigc_task/save_base_info",
+             response_model=RestResponse[AIGCTask]
+             )
+async def save_base_info(req: BasicInfoReq, background_tasks: BackgroundTasks):
+    logging.info(f"save_base_info req: {req.model_dump_json()}")
+    ret = await save_basic_info(req, background_tasks)
     return RestResponse(data=ret)
 
 
@@ -93,22 +123,14 @@ async def gen_music(req: GenMusicReq, background_tasks: BackgroundTasks):
     return RestResponse(data=ret)
 
 
-@router.post("/api/aigc_task/create",
-             summary="aigc_task/create",
+@router.post("/api/aigc_task/gen_twitter_audio",
+             summary="aigc_task/gen_twitter_audio",
              response_model=RestResponse[AIGCTask]
              )
-async def create_aigc_task(user: Optional[dict] = Depends(get_optional_current_user), ):
-    tenant_id = user.get("tenant_id", "")
-    count = await aigc_task_count_by_tenant_id(tenant_id)
-    if count > 0:
-        raise_error("Too many tasks")
-    task = AIGCTask(
-        task_id=str(uuid.uuid4()),
-        tenant_id=user.get("tenant_id", ""),
-        created_at=datetime.datetime.now()
-    )
-    await aigc_task_col.insert_one(task.model_dump())
-    return RestResponse(data=task)
+async def gen_twitter_audio(req: GenXAudioReq, background_tasks: BackgroundTasks):
+    logging.info(f"gen_twitter_audio req: {req.model_dump_json()}")
+    ret = await gen_twitter_audio_svc(req, background_tasks)
+    return RestResponse(data=ret)
 
 
 @router.post("/api/aigc_task/get",
@@ -188,12 +210,12 @@ async def get_digital_human(req: ID):
     return RestResponse(data=task)
 
 
-@router.post("/api/digital_human/get_by_username",
-             summary="digital_human/get_by_username",
+@router.post("/api/digital_human/get_by_digital_name",
+             summary="digital_human/get_by_digital_name",
              response_model=RestResponse[DigitalHuman]
              )
 async def get_digital_human_username(req: Username):
-    task = await digital_human_get_by_username(req.username)
+    task = await digital_human_get_by_digital_human(req.digital_name)
     return RestResponse(data=task)
 
 
@@ -210,7 +232,7 @@ async def delete_digital_human(req: ID):
              summary="x/user",
              response_model=RestResponse[TwitterDTO]
              )
-async def get_x_user(req: Username):
+async def get_x_user(req: Username1):
     username = req.username.replace("https://x.com/", "")
     user = await twitter_fetch_user_svc(username)
     if not user:

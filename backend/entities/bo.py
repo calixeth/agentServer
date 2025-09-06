@@ -14,6 +14,12 @@ class Country(StrEnum):
     CN = 'CN'
 
 
+class Language(StrEnum):
+    ENGLISH = "English"
+    CHINESE = "Chinese"
+    JAPANESE = "Japanese"
+
+
 class TwitterBO(BaseModel):
     id: str
     username: str

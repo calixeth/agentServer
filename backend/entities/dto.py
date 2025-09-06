@@ -6,7 +6,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from common.error import raise_error
-from entities.bo import Country
+from entities.bo import Language
 
 
 class TaskStatus(StrEnum):
@@ -42,6 +42,13 @@ class Gender(StrEnum):
     FEMALE = "1"
 
 
+class AIGCTaskID(BaseModel):
+    """
+    task_id
+    """
+    task_id: str = Field(description="task_id", default="")
+
+
 class SubTask(BaseModel):
     sub_task_id: str = Field(description="sub_task_id")
     status: TaskStatus = Field(description="status", default=TaskStatus.IN_PROGRESS)
@@ -61,28 +68,44 @@ class SubTask(BaseModel):
         self.sub_task_id = str(uuid.uuid4())
 
 
-class GenCoverImgReq(BaseModel):
-    task_id: str = Field(description="task_id")
+class GenCoverImgReq(AIGCTaskID):
     x_link: str = Field(description="x link")
     img_url: str = Field(default="", description="manually specify cover img")
 
 
-class AIGCTaskID(BaseModel):
-    """
-    task_id
-    """
-    task_id: str = Field(description="task_id", default=None)
+class BasicInfoReq(AIGCTaskID):
+    gender: Gender = Field(description="gender", default=Gender.MALE)
+    slogan: str = Field(description="slogan", default="")
+    voice_clone_url: str = Field(description="voice_clone_url", default="")
+    lang: Language = Field(description="language", default=Language.ENGLISH)
+
+
+class TaskAndHuman(BaseModel):
+    twitter_link: str = Field(description="twitter_link", default="")
+    twitter_username: str = Field(description="twitter_username", default="")
+    gender: Gender = Field(description="gender", default=Gender.MALE)
+    slogan: str = Field(description="slogan", default="")
+    voice_clone_url: str = Field(description="voice_clone_url", default="")
+    lang: Language = Field(description="language", default=Language.ENGLISH)
 
 
 class AIGCPublishReq(BaseModel):
     """
     """
     task_id: str = Field(description="task_id")
-    gender: Gender = Field(description="gender")
-    description: str = Field(description="description", default="")
-    mp3_url: str = Field(description="mp3 url", default="")
+
+
+class GenXAudioReq(AIGCTaskID):
+    """
+    """
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
-    voice_id: str = Field(description="voice_id", default="Abbess")
+
+
+class GenXAudioResp(BaseModel):
+    """
+    """
+    title: str = Field(description="title", default="")
+    audio_url: str = Field(description="audio_url", default="")
 
 
 class ID(BaseModel):
@@ -96,8 +119,14 @@ class Username(BaseModel):
     """
     username
     """
-    username: str = Field(description="username", default=None)
+    digital_name: str = Field(description="digital_name", default=None)
 
+
+class Username1(BaseModel):
+    """
+    username
+    """
+    username: str = Field(description="username", default=None)
 
 class GenCoverResp(BaseModel):
     first_frame_img_url: str = Field(description="first_frame_url", default="")
@@ -110,6 +139,11 @@ class GenCoverResp(BaseModel):
 class Cover(SubTask):
     input: GenCoverImgReq
     output: GenCoverResp | None = Field(description="cover", default=None)
+
+
+class Audio(SubTask):
+    input: GenXAudioReq
+    output: list[GenXAudioResp] = Field(description="audio", default_factory=list)
 
 
 class GenerateLyricsRequest(BaseModel):
@@ -196,18 +230,35 @@ class Video(SubTask):
     output: GenVideoResp | None = Field(description="video url", default=None)
 
 
-class AIGCTask(BaseModel):
-    task_id: str = Field(description="task_id")
+class AIGCTask(AIGCTaskID, TaskAndHuman):
     tenant_id: str = Field(description="tenant_id")
-    created_at: datetime.datetime = Field(description="created_at")
     cover: Cover | None = Field(description="cover", default=None)
     lyrics: Lyrics | None = Field(description="lyrics", default=None)
     music: Music | None = Field(description="music", default=None)
     videos: list[Video] = Field(description="videos", default_factory=list)
+    audio: Audio | None = Field(description="audio", default=None)
+    created_at: datetime.datetime = Field(description="created_at", default=None)
+    updated_at: datetime.datetime | None = Field(description="Last update time", default=None)
 
-    def check_cover(self):
-        if not self.cover or not self.cover.output or not self.cover.input.x_link:
-            raise_error("cover img not found")
+    def check_all_ready(self):
+        if not self.cover or not self.cover.output or not self.cover.status == TaskStatus.DONE:
+            raise_error("cover not ready")
+
+        if not self.lyrics or not self.lyrics.output or not self.lyrics.status == TaskStatus.DONE:
+            raise_error("lyrics not ready")
+
+        if not self.music or not self.music.output or not self.music.status == TaskStatus.DONE:
+            raise_error("music not ready")
+
+        if not self.audio or not self.audio.output or not self.audio.status == TaskStatus.DONE:
+            raise_error("audio not ready")
+
+        if not self.videos or len(self.videos) == 0:
+            raise_error("videos not ready")
+
+        for video in self.videos:
+            if not video or not video.output or not video.status == TaskStatus.DONE:
+                raise_error(f"{video.input.key} video not ready")
 
 
 class TwitterTTSRequest(BaseModel):
@@ -237,15 +288,15 @@ class TwitterTTSTask(BaseModel):
     task_id: str = Field(description="Unique task ID")
     tenant_id: str = Field(description="Tenant ID")
     twitter_url: str = Field(description="Twitter/X post URL")
-    tweet_id: str = Field(description="Extracted tweet ID")
+    tweet_id: str | None = Field(description="Extracted tweet ID", default="")
     task_type: TaskType = Field(default=TaskType.TTS, description="Task type (tts, voice_clone, music_gen)")
-    voice: Optional[str] = Field(description="TTS voice")
-    model: Optional[str] = Field(description="TTS model")
-    response_format: Optional[str] = Field(description="Audio format")
-    speed: Optional[float] = Field(description="Speech speed")
-    status: TaskStatus = Field(description="Task status")
-    created_at: datetime.datetime = Field(description="Task creation time")
-    updated_at: datetime.datetime = Field(description="Last update time")
+    voice: Optional[str] | None = Field(description="TTS voice", default=None)
+    model: Optional[str] | None = Field(description="TTS model", default=None)
+    response_format: Optional[str] = Field(description="Audio format", default=None)
+    speed: Optional[float] = Field(description="Speech speed", default=None)
+    status: TaskStatus | None = Field(description="Task status", default=None)
+    created_at: datetime.datetime | None = Field(description="Task creation time", default=None)
+    updated_at: datetime.datetime | None = Field(description="Last update time", default=None)
     title: str | None = Field(description="TTS title", default=None)
     tweet_content: str | None = Field(description="Extracted tweet content", default=None)
     voice_id: Optional[str] = Field(default=None, description="Optional voice ID for TTS")
@@ -254,9 +305,9 @@ class TwitterTTSTask(BaseModel):
     error_message: str | None = Field(description="Error message if failed", default=None)
     processing_started_at: datetime.datetime | None = Field(description="Processing start time", default=None)
     completed_at: datetime.datetime | None = Field(description="Completion time", default=None)
-    username: Optional[str] = Field(default=None, description="Username for the TTS task")
-    style: Optional[str] = Field(default=None, description="Music style for music generation tasks")
-    digital_human_id: Optional[str] = Field(default=None, description="Digital human ID")
+    username: Optional[str] | None = Field(default=None, description="Username for the TTS task")
+    style: Optional[str] | None = Field(default=None, description="Music style for music generation tasks")
+    digital_human_id: Optional[str] | None = Field(default=None, description="Digital human ID")
 
 
 class TwitterTTSTaskListResponse(BaseModel):
@@ -334,34 +385,21 @@ class DigitalVideo(BaseModel):
 # New DTOs for lyrics and music generation APIs
 
 
-class DigitalHuman(BaseModel):
+class DigitalHuman(TaskAndHuman):
     id: str = Field(description="Digital human ID")
     from_task_id: str = Field(description="from_task_id")
     from_tenant_id: str = Field(description="from_tenant_id")
-    created_at: datetime.datetime = Field(description="created_at")
-    updated_at: datetime.datetime = Field(description="updated_at")
     digital_name: str = Field(description="Digital human name")
-    username: str = Field(description="username")
     cover_img: str = Field(description="cover_img")
-    videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
-    gender: Gender = Field(description="gender")
-    description: str = Field(description="description", default="")
-    mp3_url: str = Field(description="mp3 url", default="")
-    x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
-    country: Country = Field(description="country")
     dance_image: str = Field(description="dance image", default="")
     sing_image: str = Field(description="sing_image", default="")
     figure_image: str = Field(description="figure image", default="")
-    lyrics: str = Field(description="Generated lyrics text", default="")
-    lyrics_title: str = Field(description="Extracted title from lyrics", default="")
-    music_audio_url: str = Field(description="Generated music audio URL", default="")
-    music_style: str = Field(description="Music style used", default="")
-    music_voice: str = Field(description="TTS voice used", default="")
-    music_model: str = Field(description="TTS model used", default="")
-    music_response_format: str = Field(description="Audio format", default="")
-    music_speed: float = Field(description="Speech speed used", default=-1)
-    tts_title: str = Field(description="tts title", default="")
-    tts_audio_url: str = Field(description="TTs audio_url", default="")
+    first_frame_image: str = Field(description="first frame image", default="")
+    videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
+    songs: dict[str, Any] = Field(description="songs", default_factory=dict)
+    audios: list[GenXAudioResp] = Field(description="audios", default_factory=list)
+    created_at: datetime.datetime = Field(description="created_at")
+    updated_at: datetime.datetime = Field(description="updated_at")
 
 
 class GenerateLyricsResponse(BaseModel):

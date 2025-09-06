@@ -1,5 +1,4 @@
 import logging
-import multiprocessing
 import os
 from contextlib import asynccontextmanager
 
@@ -23,6 +22,7 @@ from services.twitter_tts_processor import start_twitter_tts_processor, stop_twi
 Otel.init()
 setup_logger()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await start_twitter_tts_processor()
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     yield
     await stop_twitter_tts_processor()
     logger.info("Twitter TTS background processor stopped successfully")
+
 
 logger = logging.getLogger(__name__)
 app = FastAPI(lifespan=lifespan)
@@ -54,11 +55,16 @@ def custom_openapi():
 @app.exception_handler(Exception)
 async def default_exception_handler(request: fastapi.Request, exc: Exception):
     """"""
-    logger.error("Exception handler", exc_info=True)
-    return ORJSONResponse(
+    logger.error("M default_exc_handler", exc_info=True)
+    resp = ORJSONResponse(
         RestResponse(code=500, msg=str(exc)).model_dump(),
         status_code=200
     )
+
+    tid = Otel.get_tid()
+    if tid:
+        resp.headers["X-Trace-Id"] = tid
+    return resp
 
 
 if __name__ == '__main__':

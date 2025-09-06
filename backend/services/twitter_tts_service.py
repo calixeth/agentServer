@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+from openai import BaseModel
+
 from agent.prompt.tts import TTS_PROMPT, SONG_PROMPT, LYRICS_PROMPT
 from clients.gen_img import gen_text
 from clients.tts_client import text_to_speech_svc, call_model
@@ -591,7 +593,6 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
         if len(lyrics) > 550:
             lyrics = lyrics[:550]
 
-
         # Generate music using TTS service with music application
         tts_kwargs = {
             "text": None,
@@ -628,3 +629,68 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
     except Exception as e:
         logger.error(f"Error generating music from lyrics: {e}", exc_info=True)
         raise
+
+
+class TwitterTTSResp(BaseModel):
+    audio_url: str
+    title: str
+
+
+async def voice_clone_svc(task: TwitterTTSTask) -> TwitterTTSResp | None:
+    """
+    """
+    try:
+        task.tweet_id = extract_tweet_id_from_url(task.twitter_url) or ""
+        if not task.audio_url_input:
+            logger.error("Audio URL is required for voice cloning")
+            return None
+        # Step 1: Fetch tweet content using twitter_client
+        tweet_summary = await get_tweet_summary(task.tweet_id)
+        if not tweet_summary or 'content' not in tweet_summary:
+            logger.info(f"Failed to fetch tweet content for {task.tweet_id}")
+            return None
+        tweet_content = tweet_summary['content']
+        if not tweet_content.get('full_text'):
+            logger.info(f"Failed to fetch full_text for {task.tweet_id}")
+            return None
+        tweet_text = tweet_content['full_text']
+        task.tweet_content = tweet_text
+
+        # Step 2: Generate prompt for voice cloning
+        prompt = TTS_PROMPT.format(posts=tweet_text)
+        message = await call_model(prompt)
+        title = ""
+        if message and "#" in message:
+            title = message.split("#")[0]
+
+        voice_clone_kwargs = {
+            "text": message,
+            "model": "speech-02-hd",  # Voice clone specific model
+            "response_format": task.response_format or "mp3",
+            "speed": task.speed or 1.0,
+            "audio_url": task.audio_url_input,
+            "voice_application": SETTINGS.VOICE_APPLICATION_CLONE
+        }
+
+        audio_data = await text_to_speech_svc(**voice_clone_kwargs)
+
+        if not audio_data:
+            logger.error("Voice clone generation failed")
+            return None
+
+        # Step 4: Upload audio to object storage
+        file_extension = task.response_format or "mp3"
+        audio_url = await upload_audio_file(audio_data, file_extension)
+
+        if not audio_url:
+            logger.error("Failed to upload audio file")
+            return None
+
+        logger.info(f"Successfully processed voice clone task {task.task_id}")
+
+        return TwitterTTSResp(audio_url=audio_url, title=title)
+
+
+    except Exception as e:
+        logger.error(f"Error processing voice clone task {task.task_id}: {e}", exc_info=True)
+        return None
