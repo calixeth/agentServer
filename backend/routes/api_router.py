@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import uuid
 from typing import Optional
@@ -8,7 +7,6 @@ from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
 from starlette.responses import Response
 
-from clients.openai_client import openai_client
 from clients.twitter_client import twitter_fetch_user_tweets
 from common.error import raise_error
 from common.response import RestResponse
@@ -16,12 +14,12 @@ from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
     GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, ChatReq
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
-    digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
-    messages_col
+    digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
     gen_music_svc, save_basic_info, gen_twitter_audio_svc
+from services.chat_service import event_generator
 from services.twitter_service import twitter_fetch_user_svc
 
 logger = logging.getLogger(__name__)
@@ -261,49 +259,9 @@ async def get_x_user(req: Username1):
 
 
 @router.post("/api/chat",
-             summary="chat",
-             response_model=RestResponse[TwitterDTO]
-             )
+             summary="chat")
 async def chat(request: ChatReq):
-    await messages_col.insert_one({
-        "conversation_id": request.conversation_id,
-        "role": "user",
-        "content": request.query,
-        "ts": datetime.datetime.now()
-    })
-
-    def format_sse(data: dict, event: str = "message") -> str:
-        return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
-
-    def event_stream():
-        history = list(messages_col.find(
-            {"conversation_id": request.conversation_id}
-        ).sort("ts", -1).limit(10))
-        history = history[::-1]
-
-        conv = [{"role": msg["role"], "content": msg["content"]} for msg in history]
-
-        with openai_client.chat.completions.stream(
-                model="gpt-4o",
-                messages=conv,
-        ) as stream:
-            full_reply = ""
-            for event in stream:
-                if event.type == "message.delta" and event.delta.get("content"):
-                    delta = event.delta["content"][0].get("text", "")
-                    if delta:
-                        full_reply += delta
-                        yield format_sse({
-                            "type": "markdown",
-                            "text": delta
-                        })
-                elif event.type == "message.completed":
-                    messages_col.insert_one({
-                        "conversation_id": request.conversation_id,
-                        "role": "assistant",
-                        "content": full_reply,
-                        "ts": datetime.datetime.now()
-                    })
-                    break
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(request.conversation_id, request.query),
+        media_type="text/event-stream"
+    )
