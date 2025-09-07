@@ -18,6 +18,7 @@ predefined_voice_col = db["predefined_voice"]
 resource_limits_col = db["resource_limits"]
 resource_usage_col = db["resource_usage"]
 logs_col = db["logs"]
+messages_col = db["messages"]
 
 
 async def digital_human_save(digital_human: DigitalHuman):

@@ -128,6 +128,15 @@ class Username1(BaseModel):
     """
     username: str = Field(description="username", default=None)
 
+
+class ChatReq(BaseModel):
+    """
+    chat
+    """
+    query: str = Field(description="query")
+    conversation_id: str = Field(description="conversation_id")
+
+
 class GenCoverResp(BaseModel):
     first_frame_img_url: str = Field(description="first_frame_url", default="")
     cover_img_url: str = Field(description="cover_url", default="")
