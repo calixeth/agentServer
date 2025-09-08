@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from clients.openai_client import openai_client
+from clients.llm_client import proxy_client
 from infra.db import messages_col
 
 
@@ -35,8 +35,8 @@ async def event_generator(conversation_id: str, user_message: str):
 
     messages = await build_history(conversation_id, user_message)
 
-    stream = await openai_client.chat.completions.create(
-        model="gpt-4o",
+    stream = await proxy_client.chat.completions.create(
+        model="grok-3",
         messages=messages,
         stream=True,
     )
