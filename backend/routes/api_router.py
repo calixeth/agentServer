@@ -12,7 +12,7 @@ from common.error import raise_error
 from common.response import RestResponse
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, ChatReq
+    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id
 from infra.file import s3_upload_file
@@ -258,10 +258,11 @@ async def get_x_user(req: Username1):
     ))
 
 
-@router.post("/api/chat",
-             summary="chat")
-async def chat(request: ChatReq):
+@router.get("/api/chat",
+            summary="chat")
+async def chat(query: str = Query(..., description="query"),
+               conversation_id: str = Query(..., description="conversation_id")):
     return StreamingResponse(
-        event_generator(request.conversation_id, request.query),
+        event_generator(conversation_id, query),
         media_type="text/event-stream"
     )
