@@ -4,7 +4,7 @@ import aiohttp
 from openai import AsyncOpenAI
 
 from config import SETTINGS
-from infra.file import download_and_upload_image
+from infra.file import download_and_upload_url
 
 
 async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
@@ -49,7 +49,7 @@ async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
                             matches = re.findall(r"!\[.*?\]\((https?://[^\s]+)\)", content)
                             for image_url in matches:
                                 if image_url:
-                                    ret_img = await download_and_upload_image(image_url)
+                                    ret_img = await download_and_upload_url(image_url)
                                     if ret_img:
                                         return ret_img
     except Exception as e:

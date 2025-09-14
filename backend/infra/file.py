@@ -24,7 +24,7 @@ async def img_url_to_base64(image_url):
             return "data:image/png;base64," + encoded_data
 
 
-async def download_and_upload_image(url):
+async def download_and_upload_url(url):
     file_name = f"{uuid.uuid4()}"
     try:
         async with aiohttp.ClientSession() as session:
