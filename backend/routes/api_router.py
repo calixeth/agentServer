@@ -20,7 +20,7 @@ from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
     gen_music_svc, save_basic_info, gen_twitter_audio_svc
 from services.chat_service import event_generator
-from services.twitter_service import twitter_fetch_user_svc
+from services.twitter_service import twitter_fetch_user_svc, twitter_callback_svc
 
 logger = logging.getLogger(__name__)
 
@@ -266,3 +266,8 @@ async def chat(query: str = Query(..., description="query"),
         event_generator(conversation_id, query),
         media_type="text/event-stream"
     )
+
+
+@router.get("/api/callback")
+async def twitter_callback(code: str, state: str = None):
+    return await twitter_callback_svc(code)

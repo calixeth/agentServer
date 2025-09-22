@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 60  # default 60 days
     TEST_TOKEN = ""
     GEN_T_URL: str = ""
+    X_APP_CLIENT_ID: str = ""
+    X_APP_CLIENT_SECRET: str = ""
+    X_APP_REDIRECT_URI: str = ""
 
 
 SETTINGS = Settings()
