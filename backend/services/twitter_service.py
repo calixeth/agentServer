@@ -159,10 +159,9 @@ async def twitter_redirect_url(tenant_id: str) -> str:
         "tenant_id": tenant_id,
     }
 
-    await x_oauth_col.insert_one(doc)
-
     logging.info(f"M doc: {json.dumps(doc, ensure_ascii=False)} params {json.dumps(params, ensure_ascii=False)}")
 
+    await x_oauth_col.insert_one(doc)
     url = f"{AUTH_URL}?{urlencode(params)}"
     return url
 
