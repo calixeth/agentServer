@@ -5,7 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
-from starlette.responses import Response
+from starlette.responses import Response, RedirectResponse
 
 from clients.twitter_client import twitter_fetch_user_tweets
 from common.error import raise_error
@@ -20,7 +20,7 @@ from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
     gen_music_svc, save_basic_info, gen_twitter_audio_svc
 from services.chat_service import event_generator
-from services.twitter_service import twitter_fetch_user_svc, twitter_callback_svc
+from services.twitter_service import twitter_fetch_user_svc, twitter_callback_svc, twitter_redirect_url
 
 logger = logging.getLogger(__name__)
 
@@ -269,5 +269,13 @@ async def chat(query: str = Query(..., description="query"),
 
 
 @router.get("/api/callback")
-async def twitter_callback(code: str, state: str = None):
-    return await twitter_callback_svc(code)
+async def twitter_callback(code: str, state: str):
+    return await twitter_callback_svc(code, state)
+
+
+@router.get("/api/x/bind")
+async def twitter_bind(user: Optional[dict] = Depends(get_optional_current_user), ):
+    """"""
+    tenant_id = user.get("tenant_id", "")
+    url = await twitter_redirect_url(tenant_id)
+    return RedirectResponse(url)

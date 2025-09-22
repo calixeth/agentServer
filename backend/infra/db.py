@@ -19,6 +19,7 @@ resource_limits_col = db["resource_limits"]
 resource_usage_col = db["resource_usage"]
 logs_col = db["logs"]
 messages_col = db["messages"]
+x_oauth_col = db["x_oauth"]
 
 
 async def digital_human_save(digital_human: DigitalHuman):

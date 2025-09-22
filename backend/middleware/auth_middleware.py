@@ -27,7 +27,7 @@ class AuthConfig:
         "/api/digital_human/get_by_id",
         "/api/x/user",
         "/api/twitter-tts/tasks",
-        "/api/callback"
+        "/api/callback",
     ]
 
 
