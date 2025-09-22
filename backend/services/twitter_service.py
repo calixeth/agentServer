@@ -89,8 +89,8 @@ async def _fill(bo: TwitterBO) -> TwitterBO:
 async def twitter_callback_svc(code: str, state: str):
     logging.info(f"M Twitter callback request: {code} {state}")
 
-    oauth2_params: dict = x_oauth_col.find_one({"state": state})
-    x_oauth_col.delete_one({"state": state})
+    oauth2_params: dict = await x_oauth_col.find_one({"state": state})
+    await x_oauth_col.delete_one({"state": state})
 
     if not isinstance(oauth2_params, dict):
         raise HTTPException(status_code=400, detail="invalid state")
@@ -159,7 +159,9 @@ async def twitter_redirect_url(tenant_id: str) -> str:
         "tenant_id": tenant_id,
     }
 
-    x_oauth_col.insert_one(doc)
+    await x_oauth_col.insert_one(doc)
+
+    logging.info(f"M doc: {json.dumps(doc, ensure_ascii=False)} params {json.dumps(params, ensure_ascii=False)}")
 
     url = f"{AUTH_URL}?{urlencode(params)}"
     return url
