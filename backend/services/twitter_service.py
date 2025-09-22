@@ -96,6 +96,9 @@ async def twitter_callback_svc(code: str, state: str):
         raise HTTPException(status_code=400, detail="invalid state")
 
     logging.info(f"oauth2_params: {oauth2_params}")
+    basic_token = base64.b64encode(
+        f"{SETTINGS.X_APP_CLIENT_ID}:{SETTINGS.X_APP_CLIENT_SECRET}".encode()
+    ).decode()
     async with ClientSession() as session:
         async with session.post(
                 TOKEN_URL,
@@ -106,7 +109,10 @@ async def twitter_callback_svc(code: str, state: str):
                     "redirect_uri": SETTINGS.X_APP_REDIRECT_URI,
                     "code_verifier": oauth2_params["code_verifier"],
                 },
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": f"Basic {basic_token}"
+                },
         ) as resp:
             token_data = await resp.json()
             logging.info(f"M Token response: {token_data}")
