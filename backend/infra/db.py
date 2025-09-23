@@ -38,7 +38,6 @@ async def get_profile_by_tenant_id(tenant_id: str) -> Profile | None:
         user = await users_col.find_one({"tenant_id": tenant_id})
         p = Profile(
             tenant_id=tenant_id,
-            chain_type=user["chain_type"],
             wallet_address=user["wallet_address"],
         )
         await profile_save(p)
