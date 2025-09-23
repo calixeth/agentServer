@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from enum import StrEnum
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -411,12 +411,22 @@ class DigitalHuman(TaskAndHuman):
     updated_at: datetime.datetime = Field(description="updated_at")
 
 
+class PointsDetails(BaseModel):
+    points: int = Field(description="points", default=0)
+    type: str = Field(description="type", default="add")
+    remark: str = Field(description="remark", default="")
+    created_at: datetime.datetime = Field(description="created_at")
+
+
 class Profile(BaseModel):
     tenant_id: str = Field(description="Tenant ID", default="")
     wallet_address: str = Field(description="wallet_address", default="")
     chain_type: str = Field(description="Chain type", default="")
     verified_x_username: str = Field(description="Verified x username", default="")
     verified_x_user_id: str = Field(description="verified_x_user_id", default="")
+    verified_x_avatar_url: str = Field(description="verified_x_avatar_url", default="")
+    total_points: int = Field(description="Total points", default=0)
+    points_details: List[PointsDetails] = Field(description="Points details", default_factory=list)
 
 
 class GenerateLyricsResponse(BaseModel):

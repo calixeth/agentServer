@@ -16,7 +16,7 @@ from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, Digi
     GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
-    get_profile_by_tenant_id
+    get_profile_by_tenant_id, add_points
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
@@ -184,6 +184,8 @@ async def get_aigc_publish(req: AIGCPublishReq,
                            ):
     ret = await aigc_task_publish_by_id(req, user, background_tasks)
 
+    tenant_id = user.get("tenant_id", "")
+    await add_points(tenant_id=tenant_id, points=100, remark="publish_digital_human")
     return RestResponse(data=ret)
 
 

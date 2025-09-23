@@ -1,4 +1,5 @@
 import datetime
+from typing import Literal
 
 import motor.motor_asyncio
 
@@ -22,6 +23,34 @@ logs_col = db["logs"]
 messages_col = db["messages"]
 x_oauth_col = db["x_oauth"]
 profiles_col = db["profiles"]
+
+
+async def add_points(
+        tenant_id: str,
+        points: int,
+        remark: str = "",
+        points_type: Literal["add", "subtract"] = "add",
+):
+    if points <= 0:
+        raise_error("points must be positive")
+
+    delta = points if type == "add" else -points
+
+    detail = {
+        "points": points,
+        "type": points_type,
+        "remark": remark,
+        "created_at": datetime.datetime.now(),
+    }
+
+    await profiles_col.update_one(
+        {"tenant_id": tenant_id},
+        {
+            "$inc": {"total_points": delta},
+            "$push": {"points_details": detail},
+        },
+        upsert=True,
+    )
 
 
 async def profile_save(p: Profile):

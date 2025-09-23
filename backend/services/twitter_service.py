@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from clients.twitter_client import twitter_fetch_user, twitter_fetch_user_tweets
 from config import SETTINGS
 from entities.bo import TwitterBO, Country
-from infra.db import twitter_user_col, x_oauth_col, get_profile_by_tenant_id, profile_save
+from infra.db import twitter_user_col, x_oauth_col, get_profile_by_tenant_id, profile_save, add_points
 
 AUTH_URL = "https://twitter.com/i/oauth2/authorize"
 TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
@@ -132,11 +132,16 @@ async def twitter_callback_svc(code: str, state: str):
     x_user_id = user_data.get("data", {}).get("id")
 
     logging.info(f"M user_data {json.dumps(user_data, ensure_ascii=False)} ")
+    bo = await twitter_fetch_user_svc(x_username)
 
     profile = await get_profile_by_tenant_id(oauth2_params["tenant_id"])
     profile.verified_x_username = x_username
     profile.verified_x_user_id = x_user_id
+    profile.verified_x_avatar_url = bo.avatar_url
+
     await profile_save(profile)
+
+    await add_points(tenant_id=profile.tenant_id, points=100, remark="twitter_bind")
 
 
 def generate_pkce_pair():
