@@ -283,7 +283,7 @@ async def twitter_bind(user: Optional[dict] = Depends(get_optional_current_user)
     """"""
     tenant_id = user.get("tenant_id", "")
     url = await twitter_redirect_url(tenant_id)
-    return RedirectResponse(url)
+    return url
 
 
 @router.get("/api/profile",
