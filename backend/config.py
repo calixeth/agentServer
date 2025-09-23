@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     X_APP_CLIENT_ID: str = ""
     X_APP_CLIENT_SECRET: str = ""
     X_APP_REDIRECT_URI: str = ""
+    APP_HOME_URI: str = ""
 
 
 SETTINGS = Settings()

@@ -2,8 +2,9 @@ import datetime
 
 import motor.motor_asyncio
 
+from common.error import raise_error
 from config import SETTINGS
-from entities.dto import AIGCTask, TwitterTTSTask, DigitalHuman
+from entities.dto import AIGCTask, TwitterTTSTask, DigitalHuman, Profile
 from entities.dto import PredefinedVoice
 
 client = motor.motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO_STR)
@@ -20,6 +21,28 @@ resource_usage_col = db["resource_usage"]
 logs_col = db["logs"]
 messages_col = db["messages"]
 x_oauth_col = db["x_oauth"]
+profiles_col = db["profiles"]
+
+
+async def profile_save(p: Profile):
+    await profiles_col.replace_one({"tenant_id": p.tenant_id}, p.model_dump(), upsert=True)
+
+
+async def get_profile_by_tenant_id(tenant_id: str) -> Profile | None:
+    if not tenant_id:
+        raise_error("tenant_id is required")
+    ret = await profiles_col.find_one({"tenant_id": tenant_id})
+    if ret:
+        return Profile(**ret)
+    else:
+        user = await users_col.find_one({"tenant_id": tenant_id})
+        p = Profile(
+            tenant_id=tenant_id,
+            chain_type=user["chain_type"],
+            wallet_address=user["wallet_address"],
+        )
+        await profile_save(p)
+        return p
 
 
 async def digital_human_save(digital_human: DigitalHuman):

@@ -10,11 +10,13 @@ from starlette.responses import Response, RedirectResponse
 from clients.twitter_client import twitter_fetch_user_tweets
 from common.error import raise_error
 from common.response import RestResponse
+from config import SETTINGS
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1
+    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
-    digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id
+    digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
+    get_profile_by_tenant_id
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
@@ -268,14 +270,26 @@ async def chat(query: str = Query(..., description="query"),
     )
 
 
-@router.get("/api/callback")
+@router.get("/api/callback",
+            summary="x callback")
 async def twitter_callback(code: str, state: str):
-    return await twitter_callback_svc(code, state)
+    await twitter_callback_svc(code, state)
+    return RedirectResponse(SETTINGS.APP_HOME_URI)
 
 
-@router.get("/api/x/bind")
+@router.get("/api/x/bind",
+            summary="x bind")
 async def twitter_bind(user: Optional[dict] = Depends(get_optional_current_user), ):
     """"""
     tenant_id = user.get("tenant_id", "")
     url = await twitter_redirect_url(tenant_id)
     return RedirectResponse(url)
+
+
+@router.get("/api/profile",
+            summary="profile",
+            response_model=RestResponse[Profile])
+async def profile(user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    p = await get_profile_by_tenant_id(tenant_id)
+    return RestResponse(data=p)

@@ -410,6 +410,13 @@ class DigitalHuman(TaskAndHuman):
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
 
+class Profile(BaseModel):
+    tenant_id: str = Field(description="Tenant ID")
+    wallet_address: str = Field(description="wallet_address")
+    chain_type: str = Field(description="Chain type")
+    verified_x_username: bool = Field(description="Verified x username")
+    verified_x_user_id: bool = Field(description="verified_x_user_id")
+
 
 class GenerateLyricsResponse(BaseModel):
     """Response for lyrics generation"""
