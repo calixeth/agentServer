@@ -34,7 +34,7 @@ async def add_points(
     if points <= 0:
         raise_error("points must be positive")
 
-    delta = points if type == "add" else -points
+    delta = points if points_type == "add" else -points
 
     detail = {
         "points": points,
