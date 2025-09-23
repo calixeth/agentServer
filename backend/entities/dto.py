@@ -415,8 +415,8 @@ class Profile(BaseModel):
     tenant_id: str = Field(description="Tenant ID", default="")
     wallet_address: str = Field(description="wallet_address", default="")
     chain_type: str = Field(description="Chain type", default="")
-    verified_x_username: bool = Field(description="Verified x username", default="")
-    verified_x_user_id: bool = Field(description="verified_x_user_id", default="")
+    verified_x_username: str = Field(description="Verified x username", default="")
+    verified_x_user_id: str = Field(description="verified_x_user_id", default="")
 
 
 class GenerateLyricsResponse(BaseModel):
