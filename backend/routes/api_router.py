@@ -275,7 +275,10 @@ async def chat(query: str = Query(..., description="query"),
 @router.get("/api/callback",
             summary="x callback")
 async def twitter_callback(code: str, state: str):
-    await twitter_callback_svc(code, state)
+    try:
+        await twitter_callback_svc(code, state)
+    except Exception as err:
+        logger.error(err)
     return RedirectResponse(SETTINGS.APP_HOME_URI)
 
 

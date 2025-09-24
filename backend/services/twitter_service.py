@@ -7,7 +7,6 @@ import secrets
 from urllib.parse import urlencode
 
 from aiohttp import ClientSession
-from fastapi import HTTPException
 
 from clients.twitter_client import twitter_fetch_user, twitter_fetch_user_tweets
 from config import SETTINGS
@@ -93,7 +92,8 @@ async def twitter_callback_svc(code: str, state: str):
     await x_oauth_col.delete_one({"state": state})
 
     if not isinstance(oauth2_params, dict):
-        raise HTTPException(status_code=400, detail="invalid state")
+        logging.error(f"M oauth2_params not found: {state}")
+        return
 
     logging.info(f"oauth2_params: {oauth2_params}")
     basic_token = base64.b64encode(
@@ -119,7 +119,7 @@ async def twitter_callback_svc(code: str, state: str):
 
     access_token = token_data.get("access_token")
     if not access_token:
-        raise HTTPException(status_code=400, detail=f"token empty: {token_data}")
+        logging.error(f"M No access token found: {token_data}")
 
     async with ClientSession() as session:
         async with session.get(
