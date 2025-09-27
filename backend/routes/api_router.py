@@ -1,7 +1,7 @@
 import datetime
 import logging
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
@@ -13,7 +13,7 @@ from common.response import RestResponse
 from config import SETTINGS
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile
+    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
     get_profile_by_tenant_id, add_points
@@ -194,11 +194,15 @@ async def get_aigc_publish(req: AIGCPublishReq,
              response_model=RestResponse[list[DigitalHuman]]
              )
 async def list_digital_human(
+        req: DigitalHumanPageReq,
         page: int = Query(1, ge=1),
         pagesize: int = Query(10, ge=1, le=1000),
-        user: Optional[dict] = Depends(get_optional_current_user), ):
+):
+    query = {}
+    if req.tag:
+        query["tag"] = req.tag
     skip = (page - 1) * pagesize
-    cursor = digital_human_col.find({}) \
+    cursor = digital_human_col.find(query) \
         .sort("created_at", -1) \
         .skip(skip) \
         .limit(pagesize)
@@ -298,3 +302,12 @@ async def profile(user: Optional[dict] = Depends(get_optional_current_user), ):
     tenant_id = user.get("tenant_id", "")
     p = await get_profile_by_tenant_id(tenant_id)
     return RestResponse(data=p)
+
+
+@router.get("/api/get_score_list",
+            summary="get_score_list",
+            response_model=RestResponse[List[PointsDetails]])
+async def profile(user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    p = await get_profile_by_tenant_id(tenant_id)
+    return RestResponse(data=p.points_details)

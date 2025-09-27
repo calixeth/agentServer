@@ -225,6 +225,7 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
     task = await aigc_task_get_by_id(req.task_id)
     task.twitter_link = req.x_link
     task.twitter_username = username
+    task.twitter_avatar_url = twitter_bo.avatar_url
 
     await check_limit_and_record(client=f"task-{task.task_id}", resource="gen-img")
 
@@ -405,6 +406,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
 
 
 async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, background: BackgroundTasks) -> DigitalHuman:
+    wallet_address = user_dict.get("wallet_address", "")
     task: AIGCTask = await aigc_task_get_by_id(req.task_id)
     if not task:
         raise_error("task not found")
@@ -446,6 +448,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
         from_task_id=task.task_id,
         from_tenant_id=task.tenant_id,
         digital_name=task.twitter_username,
+        publisher_wallet_address=wallet_address,
         cover_img=task.cover.output.cover_img_url,
         sing_image=task.cover.output.sing_first_frame_img_url,
         figure_image=task.cover.output.figure_first_frame_img_url,

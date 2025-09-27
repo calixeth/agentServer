@@ -83,6 +83,7 @@ class BasicInfoReq(AIGCTaskID):
 class TaskAndHuman(BaseModel):
     twitter_link: str = Field(description="twitter_link", default="")
     twitter_username: str = Field(description="twitter_username", default="")
+    twitter_avatar_url: str = Field(description="twitter_avatar_url", default="")
     gender: Gender = Field(description="gender", default=Gender.MALE)
     slogan: str = Field(description="slogan", default="")
     voice_clone_url: str = Field(description="voice_clone_url", default="")
@@ -93,6 +94,19 @@ class AIGCPublishReq(BaseModel):
     """
     """
     task_id: str = Field(description="task_id")
+
+
+class PageReq(BaseModel):
+    """
+    """
+    page: int = Field(default=1, ge=1)
+    pagesize: int = Field(default=10, ge=1, le=1000)
+
+
+class DigitalHumanPageReq(BaseModel):
+    """
+    """
+    tag: str = Field(description="tag", default="")
 
 
 class GenXAudioReq(AIGCTaskID):
@@ -399,6 +413,7 @@ class DigitalHuman(TaskAndHuman):
     from_task_id: str = Field(description="from_task_id")
     from_tenant_id: str = Field(description="from_tenant_id")
     digital_name: str = Field(description="Digital human name")
+    publisher_wallet_address: str = Field(description="publisher_wallet_address")
     cover_img: str = Field(description="cover_img")
     dance_image: str = Field(description="dance image", default="")
     sing_image: str = Field(description="sing_image", default="")
