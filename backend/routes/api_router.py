@@ -16,7 +16,7 @@ from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, Digi
     GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
-    get_profile_by_tenant_id, add_points
+    get_profile_by_tenant_id, add_points, digital_human_save
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
@@ -231,11 +231,29 @@ async def get_digital_human_username(req: Username):
 
 @router.post("/api/digital_human/delete",
              summary="digital_human/delete",
-             response_model=RestResponse[AIGCTask]
              )
 async def delete_digital_human(req: ID):
     await digital_human_col_delete_by_id(req.id)
     return RestResponse()
+
+
+@router.post("/api/digital_human/adopt",
+             summary="digital_human/adopt",
+             response_model=RestResponse[DigitalHuman]
+             )
+async def adopt_digital_human(req: ID, user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    p = await get_profile_by_tenant_id(tenant_id)
+    if not p or not p.verified_x_username:
+        raise_error("x not verified")
+    task = await digital_human_get_by_id(req.id)
+    if p.verified_x_username != task.twitter_username:
+        raise_error("username is not matched")
+    task.adopted = True
+    await digital_human_save(task)
+
+    await add_points(tenant_id=tenant_id, points=100, remark="adopt_digital_human")
+    return RestResponse(data=task)
 
 
 @router.post("/api/x/user",
@@ -269,7 +287,11 @@ async def get_x_user(req: Username1):
 @router.get("/api/chat",
             summary="chat")
 async def chat(query: str = Query(..., description="query"),
-               conversation_id: str = Query(..., description="conversation_id")):
+               conversation_id: str = Query(..., description="conversation_id"),
+               user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    await add_points(tenant_id=tenant_id, points=20, remark="chat")
+
     return StreamingResponse(
         event_generator(conversation_id, query),
         media_type="text/event-stream"

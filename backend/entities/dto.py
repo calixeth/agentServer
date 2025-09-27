@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from common.error import raise_error
 from entities.bo import Language
+from services.twitter_tts_service import TwitterTTSResp
 
 
 class TaskStatus(StrEnum):
@@ -166,7 +167,7 @@ class Cover(SubTask):
 
 class Audio(SubTask):
     input: GenXAudioReq
-    output: list[GenXAudioResp] = Field(description="audio", default_factory=list)
+    output: list[TwitterTTSResp] = Field(description="audio", default_factory=list)
 
 
 class GenerateLyricsRequest(BaseModel):
@@ -414,6 +415,7 @@ class DigitalHuman(TaskAndHuman):
     from_tenant_id: str = Field(description="from_tenant_id")
     digital_name: str = Field(description="Digital human name")
     publisher_wallet_address: str = Field(description="publisher_wallet_address")
+    adopted: bool = Field(description="Adopted", default=False)
     cover_img: str = Field(description="cover_img")
     dance_image: str = Field(description="dance image", default="")
     sing_image: str = Field(description="sing_image", default="")
@@ -421,7 +423,7 @@ class DigitalHuman(TaskAndHuman):
     first_frame_image: str = Field(description="first frame image", default="")
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
     songs: dict[str, Any] = Field(description="songs", default_factory=dict)
-    audios: list[GenXAudioResp] = Field(description="audios", default_factory=list)
+    audios: list[TwitterTTSResp] = Field(description="audios", default_factory=list)
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
 
