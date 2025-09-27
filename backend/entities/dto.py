@@ -115,13 +115,6 @@ class GenXAudioReq(AIGCTaskID):
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
 
 
-class GenXAudioResp(BaseModel):
-    """
-    """
-    title: str = Field(description="title", default="")
-    audio_url: str = Field(description="audio_url", default="")
-
-
 class ID(BaseModel):
     """
     id

@@ -87,7 +87,6 @@ class TwitterTTSRequestBO(BaseModel):
 
 class TwitterTTSResp(BaseModel):
     audio_url: str
-    title: str
     tweet_id: str
     tweet_content: str
     tweet_created_at: str

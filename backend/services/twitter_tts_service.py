@@ -644,15 +644,8 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
         tweet_text = tweet_content['full_text']
         task.tweet_content = tweet_text
 
-        # Step 2: Generate prompt for voice cloning
-        prompt = TTS_PROMPT.format(posts=tweet_text, language=lang)
-        message = await call_model(prompt)
-        title = ""
-        if message and "#" in message:
-            title = message.split("#")[0]
-
         voice_clone_kwargs = {
-            "text": tweet_text,
+            "text": tweet_text[:280],
             "model": "speech-02-hd",  # Voice clone specific model
             "response_format": task.response_format or "mp3",
             "speed": task.speed or 1.0,
@@ -678,7 +671,6 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
 
         return TwitterTTSResp(
             audio_url=audio_url,
-            title=title,
             tweet_content=tweet_text,
             tweet_id=tweet_content["tweet_id"],
             tweet_username=task.username,
