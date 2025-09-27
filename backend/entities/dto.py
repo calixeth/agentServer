@@ -266,7 +266,11 @@ class AIGCTask(AIGCTaskID, TaskAndHuman):
         if not self.music or not self.music.output or not self.music.status == TaskStatus.DONE:
             raise_error("music not ready")
 
-        if not self.audio or not self.audio.output or not self.audio.status == TaskStatus.DONE or not self.audio.history:
+        if not self.audio or not self.audio.output:
+            raise_error("audio not ready")
+        elif self.audio.status == TaskStatus.IN_PROGRESS:
+            raise_error("audio not ready")
+        elif self.audio.status == TaskStatus.FAILED and not self.audio.history:
             raise_error("audio not ready")
 
         if not self.videos or len(self.videos) == 0:
