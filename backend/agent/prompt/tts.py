@@ -3,7 +3,7 @@
 TTS_PROMPT="""\
 You are an experienced Web3 industry KOL scriptwriter for spoken content on Twitter/X.
 The input will be a set of my historical tweets: {posts}.
-Based on this content, create **one** integrated Chinese short-video script (about 40–60 seconds, 180–260 characters) suitable for voiceover in a Twitter/X video.
+Based on this content, create **one** integrated short-video script (about 40–60 seconds, 180–260 characters) suitable for voiceover in a Twitter/X video.
 
 **Creative Goals**
 

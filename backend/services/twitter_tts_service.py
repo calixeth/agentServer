@@ -1,5 +1,4 @@
 import logging
-import logging
 import re
 from datetime import datetime
 from typing import Optional
@@ -630,6 +629,10 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
 class TwitterTTSResp(BaseModel):
     audio_url: str
     title: str
+    tweet_id: str
+    tweet_content: str
+    tweet_created_at: str
+    tweet_username: str
 
 
 async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
@@ -660,7 +663,7 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
             title = message.split("#")[0]
 
         voice_clone_kwargs = {
-            "text": message,
+            "text": tweet_text,
             "model": "speech-02-hd",  # Voice clone specific model
             "response_format": task.response_format or "mp3",
             "speed": task.speed or 1.0,
@@ -684,7 +687,14 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
 
         logger.info(f"M Successfully processed voice clone task {task.task_id}")
 
-        return TwitterTTSResp(audio_url=audio_url, title=title)
+        return TwitterTTSResp(
+            audio_url=audio_url,
+            title=title,
+            tweet_content=tweet_text,
+            tweet_id=tweet_content["tweet_id"],
+            tweet_username=task.username,
+            tweet_created_at=tweet_content["created_at"],
+        )
 
 
     except Exception as e:
