@@ -6,8 +6,7 @@ from typing import Any, Optional, List
 from pydantic import BaseModel, Field
 
 from common.error import raise_error
-from entities.bo import Language
-from services.twitter_tts_service import TwitterTTSResp
+from entities.bo import Language, TwitterTTSResp
 
 
 class TaskStatus(StrEnum):

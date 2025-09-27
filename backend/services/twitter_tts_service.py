@@ -3,14 +3,12 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from openai import BaseModel
-
 from agent.prompt.tts import TTS_PROMPT, LYRICS_PROMPT
 from clients.gen_img import gen_text
 from clients.tts_client import text_to_speech_svc, call_model
 from clients.twitter_client import get_tweet_summary
 from config import SETTINGS
-from entities.bo import TwitterTTSRequestBO
+from entities.bo import TwitterTTSRequestBO, TwitterTTSResp
 from entities.dto import TwitterTTSTask, TwitterTTSTaskListResponse
 from infra.file import upload_audio_file
 from utils import remove_square_brackets
@@ -624,15 +622,6 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
     except Exception as e:
         logger.error(f"M Error generating music from lyrics: {e}", exc_info=True)
         raise
-
-
-class TwitterTTSResp(BaseModel):
-    audio_url: str
-    title: str
-    tweet_id: str
-    tweet_content: str
-    tweet_created_at: str
-    tweet_username: str
 
 
 async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:

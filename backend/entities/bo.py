@@ -1,6 +1,7 @@
 from enum import StrEnum
 from typing import Optional
 
+from openai import BaseModel
 from pydantic import BaseModel, Field
 
 from entities.enums import ChainType
@@ -82,3 +83,12 @@ class TwitterTTSRequestBO(BaseModel):
     username: Optional[str] = Field(default=None, description="Username for the TTS task")
     style: Optional[str] = Field(default=None, description="Music style for music generation tasks")
     digital_human_id: Optional[str] = Field(default=None, description="Digital human ID")
+
+
+class TwitterTTSResp(BaseModel):
+    audio_url: str
+    title: str
+    tweet_id: str
+    tweet_content: str
+    tweet_created_at: str
+    tweet_username: str
