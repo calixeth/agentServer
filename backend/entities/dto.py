@@ -71,6 +71,7 @@ class SubTask(BaseModel):
 class GenCoverImgReq(AIGCTaskID):
     x_link: str = Field(description="x link")
     img_url: str = Field(default="", description="manually specify cover img")
+    style_id: int = Field(description="style id", default=1)
 
 
 class BasicInfoReq(AIGCTaskID):

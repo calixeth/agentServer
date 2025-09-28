@@ -1,5 +1,5 @@
 FIRST_FRAME_IMG_PROMPT = """\
-Generate a 3D cartoon Pixar-style exaggerated character based on the provided image. wide shot, not close-up. Full-body portrait, facing the camera directly. Body and head both oriented forward, no tilt or side view. Highly detailed, clean sharp line art. Width: 1024px, height: 1536px. Composition should be symmetrical and centered. Clear details preserved: original facial features, hairstyle, expression, body proportions, and clothing. Character occupies 70% of frame height, leaving 30% background visible. Subject should not dominate the image. Full head and hair entirely inside frame with ample headroom. Pure black background, no borders, no text.
+Generate a {style} exaggerated character based on the provided image. wide shot, not close-up. Full-body portrait, facing the camera directly. Body and head both oriented forward, no tilt or side view. Highly detailed. Width: 1024px, height: 1536px. Composition should be symmetrical and centered. Clear details preserved: original facial features, hairstyle, expression, body proportions, and clothing. Character occupies 70% of frame height, leaving 30% background visible. Subject should not dominate the image. Full head and hair entirely inside frame with ample headroom. Pure black background, no borders, no text.
 """
 
 V_SPEECH_PROMPT = """\

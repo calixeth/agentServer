@@ -12,7 +12,6 @@ from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
 from clients.openai_gen_img import gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
-from entities.bo import TwitterBO
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
     GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
@@ -23,6 +22,18 @@ from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import voice_clone_svc
+
+style_map = {
+    1: "3D cartoon Pixar-style exaggerated character",
+    2: "Gothic anime style",
+    3: "The 3D CGI style emphasizes hyper-realistic details",
+    4: "cartoon-style illustration",
+    5: "Oil painting style",
+    6: "sketched style",
+    8: "cyberpunk style mecha",
+    9: "Cartoon, humorous style",
+    10: "pepe style"
+}
 
 
 async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) -> AIGCTask:
@@ -209,6 +220,10 @@ async def save_basic_info(req: BasicInfoReq, background: BackgroundTasks) -> AIG
 
 
 async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) -> AIGCTask:
+    style = style_map.get(req.style_id, "")
+    if not style:
+        raise_error(f"unknown style_id: {req.style_id}")
+
     username = req.x_link.replace("https://x.com/", "")
 
     twitter_bo = await twitter_fetch_user_svc(username)
@@ -243,7 +258,73 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
     await aigc_task_save(task)
 
-    background.add_task(_task_gen_cover_img_svc, task, twitter_bo)
+    async def _task_gen_cover_img_svc():
+        logging.info(f"M begin")
+        first_frame_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400],
+                                                         prompt=FIRST_FRAME_IMG_PROMPT.format(style=style),
+                                                         scenario="first_frame")
+        dance_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
+                                                   prompt=V_DANCE_IMAGE_PROMPT,
+                                                   scenario="dance")
+        sing_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
+                                                  prompt=V_SING_IMAGE_PROMPT,
+                                                  scenario="sing")
+        figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
+                                              prompt=V_FIGURE_IMAGE_PROMPT,
+                                              scenario="figure")
+
+        first_frame_imgs, dance_imgs, sing_imgs, figure_imgs = await asyncio.gather(
+            first_frame_imgs_task,
+            dance_imgs_task,
+            sing_imgs_task,
+            figure_imgs_task
+        )
+
+        cur_task = await aigc_task_get_by_id(task.task_id)
+
+        first_frame_url = ""
+        if first_frame_imgs and first_frame_imgs.data:
+            first_frame_url = await s3_upload_openai_img(first_frame_imgs.data[0])
+        if not first_frame_url:
+            logging.info(f"M first_frame_url upload error")
+
+        dance_url = ""
+        if dance_imgs and dance_imgs.data:
+            dance_url = await s3_upload_openai_img(dance_imgs.data[0])
+        if not dance_url:
+            logging.info(f"M dance_url upload error")
+
+        sing_url = ""
+        if sing_imgs and sing_imgs.data:
+            sing_url = await s3_upload_openai_img(sing_imgs.data[0])
+        if not sing_url:
+            logging.info(f"M sing_url upload error")
+
+        figure_url = ""
+        if figure_imgs and figure_imgs.data:
+            # figure_url = await s3_upload_openai_img(figure_imgs.data[0])
+            figure_url = figure_imgs.data[0].url
+        if not figure_url:
+            logging.info(f"M figure_url upload error")
+
+        if first_frame_url and dance_url and sing_url and figure_url:
+            cur_task.cover.output = GenCoverResp(
+                first_frame_img_url=first_frame_url,
+                cover_img_url=first_frame_url,
+                dance_first_frame_img_url=dance_url,
+                sing_first_frame_img_url=sing_url,
+                figure_first_frame_img_url=figure_url,
+            )
+            cur_task.cover.status = TaskStatus.DONE
+            cur_task.cover.done_at = datetime.datetime.now()
+            logging.info(f"M cur_cover_img_svc: {cur_task.cover.output.model_dump_json()}")
+            await aigc_task_save(cur_task)
+            return
+
+        cur_task.cover.status = TaskStatus.FAILED
+        await aigc_task_save(cur_task)
+
+    background.add_task(_task_gen_cover_img_svc)
 
     return task
 
@@ -276,73 +357,6 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
     await aigc_task_save(org_task)
     background.add_task(_task_video_svc, org_task, req)
     return org_task
-
-
-async def _task_gen_cover_img_svc(task: AIGCTask, twitter_bo: TwitterBO):
-    logging.info(f"M begin")
-    first_frame_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400],
-                                                     prompt=FIRST_FRAME_IMG_PROMPT,
-                                                     scenario="first_frame")
-    dance_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
-                                               prompt=V_DANCE_IMAGE_PROMPT,
-                                               scenario="dance")
-    sing_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
-                                              prompt=V_SING_IMAGE_PROMPT,
-                                              scenario="sing")
-    figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
-                                          prompt=V_FIGURE_IMAGE_PROMPT,
-                                          scenario="figure")
-
-    first_frame_imgs, dance_imgs, sing_imgs, figure_imgs = await asyncio.gather(
-        first_frame_imgs_task,
-        dance_imgs_task,
-        sing_imgs_task,
-        figure_imgs_task
-    )
-
-    cur_task = await aigc_task_get_by_id(task.task_id)
-
-    first_frame_url = ""
-    if first_frame_imgs and first_frame_imgs.data:
-        first_frame_url = await s3_upload_openai_img(first_frame_imgs.data[0])
-    if not first_frame_url:
-        logging.info(f"M first_frame_url upload error")
-
-    dance_url = ""
-    if dance_imgs and dance_imgs.data:
-        dance_url = await s3_upload_openai_img(dance_imgs.data[0])
-    if not dance_url:
-        logging.info(f"M dance_url upload error")
-
-    sing_url = ""
-    if sing_imgs and sing_imgs.data:
-        sing_url = await s3_upload_openai_img(sing_imgs.data[0])
-    if not sing_url:
-        logging.info(f"M sing_url upload error")
-
-    figure_url = ""
-    if figure_imgs and figure_imgs.data:
-        # figure_url = await s3_upload_openai_img(figure_imgs.data[0])
-        figure_url = figure_imgs.data[0].url
-    if not figure_url:
-        logging.info(f"M figure_url upload error")
-
-    if first_frame_url and dance_url and sing_url and figure_url:
-        cur_task.cover.output = GenCoverResp(
-            first_frame_img_url=first_frame_url,
-            cover_img_url=first_frame_url,
-            dance_first_frame_img_url=dance_url,
-            sing_first_frame_img_url=sing_url,
-            figure_first_frame_img_url=figure_url,
-        )
-        cur_task.cover.status = TaskStatus.DONE
-        cur_task.cover.done_at = datetime.datetime.now()
-        logging.info(f"M cur_cover_img_svc: {cur_task.cover.output.model_dump_json()}")
-        await aigc_task_save(cur_task)
-        return
-
-    cur_task.cover.status = TaskStatus.FAILED
-    await aigc_task_save(cur_task)
 
 
 async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
