@@ -64,6 +64,5 @@ def setup_logger():
         level=logging.INFO,
         handlers=[
             handler,
-            MongoHandler(),
         ]
     )
