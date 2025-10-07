@@ -1,6 +1,8 @@
 import asyncio
 import datetime
+import json
 import logging
+import re
 import uuid
 
 from fastapi import BackgroundTasks
@@ -261,7 +263,14 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
     if not task.slogan:
         try:
             logging.info(f"gen slogan {username}")
-            task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
+            text = await gen_text(SLOGAN_PROMPT.format(account=username))
+            pattern = re.compile(r'\{.*?\}', re.DOTALL)
+            match = pattern.search(text)
+            if match:
+                json_str = match.group(0)
+                data = json.loads(json_str)
+                if "slogan" in data:
+                    task.slogan = data["slogan"]
         except Exception as e:
             logging.error(e)
 
