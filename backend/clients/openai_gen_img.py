@@ -51,7 +51,7 @@ async def gpt_image_1_gen_imgs_svc(img_urls: list[str], prompt: str, scenario: s
                                        base_url=SETTINGS.PROXY_OPENAI_BASE_URL).images.edit(
             image=image_files,
             prompt=prompt,
-            model="gpt-4o-image"
+            model="gpt-image-1"
         )
 
         if ret and ret.data[0] and (ret.data[0].url or ret.data[0].b64_json):

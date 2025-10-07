@@ -9,6 +9,7 @@ from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
     V_FIGURE_IMAGE_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
+from clients.gen_img import gen_img_svc
 from clients.openai_gen_img import gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
@@ -261,13 +262,13 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
     async def _task_gen_cover_img_svc():
         logging.info(f"M begin")
-        first_frame_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[twitter_bo.avatar_url_400x400],
+        first_frame_imgs_task = gen_img_svc(img_urls=[twitter_bo.avatar_url_400x400],
                                                          prompt=FIRST_FRAME_IMG_PROMPT.format(style=style),
                                                          scenario="first_frame")
-        dance_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
+        dance_imgs_task = gen_img_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
                                                    prompt=V_DANCE_IMAGE_PROMPT,
                                                    scenario="dance")
-        sing_imgs_task = gpt_image_1_gen_imgs_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
+        sing_imgs_task = gen_img_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
                                                   prompt=V_SING_IMAGE_PROMPT,
                                                   scenario="sing")
         figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
@@ -283,23 +284,23 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
         cur_task = await aigc_task_get_by_id(task.task_id)
 
-        first_frame_url = ""
-        if first_frame_imgs and first_frame_imgs.data:
-            first_frame_url = await s3_upload_openai_img(first_frame_imgs.data[0])
-        if not first_frame_url:
-            logging.info(f"M first_frame_url upload error")
+        first_frame_url = first_frame_imgs
+        # if first_frame_imgs and first_frame_imgs.data:
+        #     first_frame_url = await s3_upload_openai_img(first_frame_imgs.data[0])
+        # if not first_frame_url:
+        #     logging.info(f"M first_frame_url upload error")
 
-        dance_url = ""
-        if dance_imgs and dance_imgs.data:
-            dance_url = await s3_upload_openai_img(dance_imgs.data[0])
-        if not dance_url:
-            logging.info(f"M dance_url upload error")
+        dance_url = dance_imgs
+        # if dance_imgs and dance_imgs.data:
+        #     dance_url = await s3_upload_openai_img(dance_imgs.data[0])
+        # if not dance_url:
+        #     logging.info(f"M dance_url upload error")
 
-        sing_url = ""
-        if sing_imgs and sing_imgs.data:
-            sing_url = await s3_upload_openai_img(sing_imgs.data[0])
-        if not sing_url:
-            logging.info(f"M sing_url upload error")
+        sing_url = sing_imgs
+        # if sing_imgs and sing_imgs.data:
+        #     sing_url = await s3_upload_openai_img(sing_imgs.data[0])
+        # if not sing_url:
+        #     logging.info(f"M sing_url upload error")
 
         figure_url = ""
         if figure_imgs and figure_imgs.data:

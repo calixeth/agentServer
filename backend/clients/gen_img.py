@@ -4,15 +4,19 @@ import aiohttp
 from openai import AsyncOpenAI
 
 from config import SETTINGS
-from infra.file import download_and_upload_url
+from infra.file import download_and_upload_url, img_url_to_base64
 
 
-async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
+async def gen_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> str | None:
     try:
         content = [
             {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": template_img_base64}}
         ]
+        for img_url in img_urls:
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": await img_url_to_base64(img_url)}
+            })
 
         data = {
             "model": "gpt-4o-image-vip",
@@ -36,7 +40,7 @@ async def gen_img_svc(template_img_base64: str, prompt: str) -> str | None:
                                     timeout=1200) as response:
                 logging.info(f"Response: {response.status}")
                 if response.status != 200:
-                    logging.warning(f'gen_img: http status: {response.status}')
+                    logging.warning(f'gen_img: http status: {response.status} {scenario}')
                     return None
                 result = await response.json()
                 if "error" in result:
