@@ -60,7 +60,8 @@ async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) ->
             result = await twitter_tts_service.generate_lyrics_from_twitter_url(
                 twitter_url=task.cover.input.x_link,
                 tenant_id=task.tenant_id,
-                lang=task.lang
+                lang=task.lang,
+                style=task.music.output.style,
             )
             response = GenerateLyricsResponse(**result)
         except Exception as e:

@@ -166,6 +166,7 @@ class Audio(SubTask):
 class GenerateLyricsRequest(BaseModel):
     """Request for generating lyrics from Twitter URL"""
     twitter_url: str = Field(description="Twitter/X post URL. default user cover x link")
+    style: str = Field(description="Music style used")
 
 
 class GenerateLyricsReq(BaseModel):

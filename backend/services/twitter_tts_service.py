@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from datetime import datetime
@@ -520,7 +521,7 @@ async def get_predefined_voice_by_id(voice_id: str):
     #     return None
 
 
-async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str) -> dict:
+async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str="English", style: str = "") -> dict:
     """
     Generate lyrics from Twitter URL by analyzing user profile and recent tweets
     
@@ -533,16 +534,28 @@ async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lan
     """
     try:
 
-        prompt = LYRICS_PROMPT.format(twitter_url=twitter_url, Language=lang)
+        prompt = LYRICS_PROMPT.format(twitter_url=twitter_url, style=style, language=lang)
         text = await gen_text(prompt)
-        data = text.split("##")
+        logger.info(f"generate_lyrics_from_twitter_url LLM resp={text}")
+
+        pattern = re.compile(r'\{.*?\}', re.DOTALL)
+        match = pattern.search(text)
+
+        data = {}
+        if match:
+            json_str = match.group(0)
+            try:
+                data = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                logger.error(e, exc_info=True)
+                raise
 
         if not data or len(data) < 2:
             return {}
 
         return {
-            "title": data[0].lstrip(),
-            "lyrics": data[1].lstrip(),
+            "title": data.get("SongTitle", "").lstrip(),
+            "lyrics": data.get("Lyrics", "").lstrip(),
             "twitter_url": twitter_url,
             "generated_at": datetime.now().isoformat()
         }
@@ -582,9 +595,6 @@ async def generate_music_from_lyrics(lyrics: str, style: str, tenant_id: str,
                   .replace("[]", ""))
 
         lyrics = remove_square_brackets(lyrics)
-
-        if len(lyrics) > 550:
-            lyrics = lyrics[:550]
 
         # Generate music using TTS service with music application
         tts_kwargs = {

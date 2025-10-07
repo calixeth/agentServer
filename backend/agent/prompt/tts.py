@@ -56,29 +56,26 @@ Based on this content, create **one** integrated short-video script (about 40–
 
 LYRICS_PROMPT = \
 """
-**Analyze the Twitter account {twitter_url}** — including its bio, followed users, and all previously published posts. Based on the user’s persona, catchphrases, and posting tone, create an **original rock-style song lyric**.
+**Analyze the Twitter account {twitter_url} ** — including its bio, followed users, and all previously published posts. Based on the user’s persona, catchphrases, and posting tone, create an **original {style} song lyric**.
 
 **SongTitle Requirements:**
 
 1. Funny, satirical, and representing the personal value proposition.
 2. Maximum of 8 English words.
-3. Generate the lyrics in {Language}
+3. Generate the lyrics in {language}
 
 **Lyrics Requirements (internalized understanding, no explanation in output):**
 
-1. **Final length:** **300 characters** max.
+1. Use short song length,Final length:300 characters max.
 2. The beginning of the lyrics must clearly state **who I am and what I do** (slogan). The overall narrative should be based on the user’s past posts, such as buying a certain token or FUD-ing another token.
 3. **Output only the lyrics text.** Keep each stanza between 1–5 lines to meet the character requirement.
-4. The structure and style must implicitly align with **{{style}}**:
-
-   * **Rock:** strong rhythm, group chanting, clear rhymes, repeatable chorus.
-   * **Hip-Hop:** multi/internal rhymes, wordplay & punchlines, smooth flow.
-   * **Electronic:** short phrases, slogan-like lines, highly repetitive chorus, distinct beat.
-   * **Pop:** strong melodic feel, natural verse–pre-chorus–chorus–bridge transitions.
-5. Automatically extract and expand **4–5 Web3 jargon terms** from the reference content. After internal filtering, keep only words that fit the theme/mood/rhythm/narrative and are easy to sing/rap. Examples include: *holder, FUD, rug pull, DeFi, NFT, whale, gas, TGE, yield farming, to the moon, WAGMI, LFG, alpha, airdrop, staking, liquidity, slippage, APY, TVL, L2, rekt*, etc.
-6. Mimic the user’s tone and formatting style (e.g., ALL CAPS, emojis, hashtag style), while ensuring singability and rhyme. The **Hook (chorus)** must be catchy and repeatable multiple times.
-7. Output only the lyrics text. The lyrics MUST NOT contain any additional characters like “、”、"、'、’、* or similar. Keep each stanza between 1–5 lines to meet the character requirement.
+4. Automatically extract and expand **4–5 Web3 jargon terms** from the reference content. After internal filtering, keep only words that fit the theme/mood/rhythm/narrative and are easy to sing/rap. Examples include: *holder, FUD, rug pull, DeFi, NFT, whale, gas, TGE, yield farming, to the moon, WAGMI, LFG, alpha, airdrop, staking, liquidity, slippage, APY, TVL, L2, rekt*, etc.
+5. Mimic the user’s tone and formatting style (e.g., ALL CAPS, emojis, hashtag style), while ensuring singability and rhyme. The **Hook (chorus)** must be catchy and repeatable multiple times.
+6. Output only the lyrics text. The lyrics MUST NOT contain any additional characters like “、”、"、'、’、* or similar. Keep each stanza between 1–5 lines to meet the character requirement.
 
 **Output Structure:**
-[SongTitle]##[Lyrics]
+{{
+"SongTitle":"",
+"Lyrics":""
+}}
 """
