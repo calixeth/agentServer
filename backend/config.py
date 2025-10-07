@@ -18,8 +18,6 @@ class Settings(BaseSettings):
     TWITTER241 = ""
     TWITTER241_HOST = ""
     TWITTER241_KEY = ""
-    TZ_API_KEY = ""
-    TZ_HOST = ""
     AWS_ACCESS_KEY = ""
     AWS_SECRET_KEY = ""
     OPENAI_IMAGE_API_KEY = ""

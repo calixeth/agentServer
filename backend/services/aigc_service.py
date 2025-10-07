@@ -8,9 +8,10 @@ from fastapi import BackgroundTasks
 from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
     V_FIGURE_IMAGE_PROMPT
+from agent.prompt.tts import SLOGAN_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
-from clients.gen_img import gen_img_svc
-from clients.openai_gen_img import gpt_image_1_gen_imgs_svc, gemini_gen_img_svc
+from clients.gen_img import gen_gpt_4o_img_svc, gen_text
+from clients.openai_gen_img import gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
@@ -18,7 +19,6 @@ from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoRe
     GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
     GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_digital_human
-from infra.file import s3_upload_openai_img
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
 from services.twitter_service import twitter_fetch_user_svc
@@ -262,15 +262,15 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
     async def _task_gen_cover_img_svc():
         logging.info(f"M begin")
-        first_frame_imgs_task = gen_img_svc(img_urls=[twitter_bo.avatar_url_400x400],
-                                                         prompt=FIRST_FRAME_IMG_PROMPT.format(style=style),
-                                                         scenario="first_frame")
-        dance_imgs_task = gen_img_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
-                                                   prompt=V_DANCE_IMAGE_PROMPT,
-                                                   scenario="dance")
-        sing_imgs_task = gen_img_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
-                                                  prompt=V_SING_IMAGE_PROMPT,
-                                                  scenario="sing")
+        first_frame_imgs_task = gen_gpt_4o_img_svc(img_urls=[twitter_bo.avatar_url_400x400],
+                                                   prompt=FIRST_FRAME_IMG_PROMPT.format(style=style),
+                                                   scenario="first_frame")
+        dance_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
+                                             prompt=V_DANCE_IMAGE_PROMPT,
+                                             scenario="dance")
+        sing_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
+                                            prompt=V_SING_IMAGE_PROMPT,
+                                            scenario="sing")
         figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
                                               prompt=V_FIGURE_IMAGE_PROMPT,
                                               scenario="figure")
@@ -283,6 +283,8 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
         )
 
         cur_task = await aigc_task_get_by_id(task.task_id)
+        if not cur_task.slogan:
+            task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
 
         first_frame_url = first_frame_imgs
         # if first_frame_imgs and first_frame_imgs.data:

@@ -7,7 +7,7 @@ from config import SETTINGS
 from infra.file import download_and_upload_url, img_url_to_base64
 
 
-async def gen_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> str | None:
+async def gen_gpt_4o_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> str | None:
     try:
         content = [
             {"type": "text", "text": prompt},
@@ -30,13 +30,13 @@ async def gen_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> s
         }
 
         headers = {
-            "Authorization": f"Bearer {SETTINGS.TZ_API_KEY}",
+            "Authorization": f"Bearer {SETTINGS.PROXY_OPENAI_API_KEY}",
             "Content-Type": "application/json",
         }
 
         logging.info(f"Generating...")
         async with aiohttp.ClientSession() as session:
-            async with session.post(f"{SETTINGS.TZ_HOST}/v1/chat/completions", json=data, headers=headers,
+            async with session.post(f"{SETTINGS.PROXY_OPENAI_BASE_URL}/chat/completions", json=data, headers=headers,
                                     timeout=1200) as response:
                 logging.info(f"Response: {response.status}")
                 if response.status != 200:
@@ -57,7 +57,7 @@ async def gen_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> s
                                     if ret_img:
                                         return ret_img
     except Exception as e:
-        logging.error(f"gen_img error: {e}", exc_info=True)
+        logging.error(f"gen_img error: {e} {scenario}", exc_info=True)
     return None
 
 
