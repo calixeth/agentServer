@@ -32,7 +32,7 @@ style_map = {
     5: "Oil painting style",
     6: "sketched style",
     8: "cyberpunk style mecha",
-    9: "Cartoon, humorous style",
+    9: "Simpsons cartoon style",
     10: "pepe style"
 }
 
@@ -284,7 +284,11 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
         cur_task = await aigc_task_get_by_id(task.task_id)
         if not cur_task.slogan:
-            task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
+            try:
+                logging.info(f"gen slogan {username}")
+                task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
+            except Exception as e:
+                logging.error(e)
 
         first_frame_url = first_frame_imgs
         # if first_frame_imgs and first_frame_imgs.data:

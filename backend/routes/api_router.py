@@ -16,7 +16,7 @@ from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, Digi
     GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
-    get_profile_by_tenant_id, add_points, digital_human_save, profile_save
+    get_profile_by_tenant_id, add_points, digital_human_save, profile_save, profiles_col
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
@@ -218,6 +218,21 @@ async def list_digital_human(
 async def get_digital_human(req: ID):
     task = await digital_human_get_by_id(req.id)
     return RestResponse(data=task)
+
+
+@router.post("/api/digital_human/follow",
+             summary="digital_human/follow",
+             response_model=RestResponse
+             )
+async def follow_digital_human(req: ID,
+                               user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    await profiles_col.update_one(
+        {"tenant_id": tenant_id},
+        {"$addToSet": {"follow_digital_human_ids": req.id}},
+        upsert=False
+    )
+    return RestResponse(data=True)
 
 
 @router.post("/api/digital_human/get_by_digital_name",

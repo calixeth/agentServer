@@ -440,9 +440,11 @@ class Profile(BaseModel):
     verified_x_username: str = Field(description="Verified x username", default="")
     verified_x_user_id: str = Field(description="verified_x_user_id", default="")
     verified_x_avatar_url: str = Field(description="verified_x_avatar_url", default="")
+    adopted: bool = Field(description="Adopted", default=False)
     total_points: int = Field(description="Total points", default=0)
     points_details: List[PointsDetails] = Field(description="Points details", default_factory=list)
-    adopted: bool = Field(description="Adopted", default=False)
+    follow_digital_human_ids: list[str] = Field(description="Follow digital humans", default_factory=list)
+
 
 
 class GenerateLyricsResponse(BaseModel):
