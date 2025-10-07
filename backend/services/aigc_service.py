@@ -272,7 +272,7 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
                 if "slogan" in data:
                     task.slogan = data["slogan"]
         except Exception as e:
-            logging.error(e)
+            logging.error(f"M slogan gen error: {e}", exc_info=True)
 
     await aigc_task_save(task)
 
