@@ -442,6 +442,7 @@ class Profile(BaseModel):
     verified_x_avatar_url: str = Field(description="verified_x_avatar_url", default="")
     total_points: int = Field(description="Total points", default=0)
     points_details: List[PointsDetails] = Field(description="Points details", default_factory=list)
+    adopted: bool = Field(description="Adopted", default=False)
 
 
 class GenerateLyricsResponse(BaseModel):
