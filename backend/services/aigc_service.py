@@ -286,7 +286,7 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
         if not cur_task.slogan:
             try:
                 logging.info(f"gen slogan {username}")
-                task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
+                cur_task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
             except Exception as e:
                 logging.error(e)
 
