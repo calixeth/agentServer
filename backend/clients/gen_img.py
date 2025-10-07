@@ -19,7 +19,7 @@ async def gen_img_svc(img_urls: list[str], prompt: str, scenario: str = "") -> s
             })
 
         data = {
-            "model": "gpt-4o-image-vip",
+            "model": "gpt-4o-image",
             "stream": False,
             "messages": [
                 {
