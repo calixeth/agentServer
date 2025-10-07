@@ -258,6 +258,13 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
             created_at=datetime.datetime.now()
         )
 
+    if not task.slogan:
+        try:
+            logging.info(f"gen slogan {username}")
+            task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
+        except Exception as e:
+            logging.error(e)
+
     await aigc_task_save(task)
 
     async def _task_gen_cover_img_svc():
@@ -283,12 +290,6 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
         )
 
         cur_task = await aigc_task_get_by_id(task.task_id)
-        if not cur_task.slogan:
-            try:
-                logging.info(f"gen slogan {username}")
-                cur_task.slogan = await gen_text(SLOGAN_PROMPT.format(account=username))
-            except Exception as e:
-                logging.error(e)
 
         first_frame_url = first_frame_imgs
         # if first_frame_imgs and first_frame_imgs.data:
