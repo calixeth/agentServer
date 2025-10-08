@@ -68,7 +68,7 @@ async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) ->
             )
             response = GenerateLyricsResponse(**result)
         except Exception as e:
-            logging.error(f"M failed to generate lyrics {e}")
+            logging.error(f"M failed to generate lyrics {e}", exc_info=True)
             response = None
 
         cur_task = await aigc_task_get_by_id(task.task_id)
@@ -278,16 +278,19 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
 
     async def _task_gen_cover_img_svc():
         logging.info(f"M begin")
-        first_frame_imgs_task = gen_gpt_4o_img_svc(img_urls=[twitter_bo.avatar_url_400x400],
+        base_img = req.img_url
+        if not base_img:
+            base_img = twitter_bo.avatar_url_400x400
+        first_frame_imgs_task = gen_gpt_4o_img_svc(img_urls=[base_img],
                                                    prompt=FIRST_FRAME_IMG_PROMPT.format(style=style),
                                                    scenario="first_frame")
-        dance_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, twitter_bo.avatar_url_400x400],
+        dance_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_DANCE, base_img],
                                              prompt=V_DANCE_IMAGE_PROMPT,
                                              scenario="dance")
-        sing_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_SING, twitter_bo.avatar_url_400x400],
+        sing_imgs_task = gen_gpt_4o_img_svc(img_urls=[SETTINGS.GEN_T_URL_SING, base_img],
                                             prompt=V_SING_IMAGE_PROMPT,
                                             scenario="sing")
-        figure_imgs_task = gemini_gen_img_svc(img_url=twitter_bo.avatar_url_400x400,
+        figure_imgs_task = gemini_gen_img_svc(img_url=base_img,
                                               prompt=V_FIGURE_IMAGE_PROMPT,
                                               scenario="figure")
 
