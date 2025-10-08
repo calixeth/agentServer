@@ -428,7 +428,7 @@ async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
         first_frame_img_url = task.cover.output.first_frame_img_url
 
     if VideoKeyType.DANCE == req.key:
-        data = await veo3_gen_video_svc_v3(first_frame_img_url, prompt)
+        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
     elif VideoKeyType.SING == req.key:
         data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
     elif VideoKeyType.FIGURE == req.key:
