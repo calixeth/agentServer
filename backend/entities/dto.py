@@ -87,6 +87,7 @@ class TaskAndHuman(BaseModel):
     twitter_avatar_url: str = Field(description="twitter_avatar_url", default="")
     gender: Gender = Field(description="gender", default=Gender.MALE)
     slogan: str = Field(description="slogan", default="")
+    slogan_voice_url: str = Field(description="slogan_voice_url", default="")
     voice_clone_url: str = Field(description="voice_clone_url", default="")
     lang: Language = Field(description="language", default=Language.ENGLISH)
 
@@ -309,7 +310,8 @@ class TwitterTTSTask(BaseModel):
     """Twitter TTS task model"""
     task_id: str = Field(description="Unique task ID")
     tenant_id: str = Field(description="Tenant ID")
-    twitter_url: str = Field(description="Twitter/X post URL")
+    read_content: str = Field(description="read_content", default="")
+    twitter_url: str = Field(description="Twitter/X post URL", default="")
     tweet_id: str | None = Field(description="Extracted tweet ID", default="")
     task_type: TaskType = Field(default=TaskType.TTS, description="Task type (tts, voice_clone, music_gen)")
     voice: Optional[str] | None = Field(description="TTS voice", default=None)

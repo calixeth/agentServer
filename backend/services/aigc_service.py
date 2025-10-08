@@ -170,34 +170,49 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
 
         result = []
         tasks = []
-        for twitter_url in req.x_tts_urls:
-            tts_task = TwitterTTSTask(
-                task_id=task.audio.sub_task_id or str(uuid.uuid4()),
-                tenant_id=task.tenant_id,
-                twitter_url=twitter_url,
-                voice_id=voice_id,
-                username=task.twitter_username,
-                audio_url_input=task.voice_clone_url,
-                task_type=TaskType.VOICE_CLONE,
-            )
-            tasks.append(voice_clone_svc(tts_task, task.lang))
-
+        voice_clone_url = task.slogan_voice_url
         try:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for r in results:
-                if isinstance(r, Exception):
-                    logging.error(f"voice_clone_svc error: {r}")
-                elif r:
-                    result.append(r)
+
+            for twitter_url in req.x_tts_urls:
+                tts_task = TwitterTTSTask(
+                    task_id=task.audio.sub_task_id or str(uuid.uuid4()),
+                    tenant_id=task.tenant_id,
+                    twitter_url=twitter_url,
+                    voice_id=voice_id,
+                    username=task.twitter_username,
+                    audio_url_input=task.voice_clone_url,
+                    task_type=TaskType.VOICE_CLONE,
+                )
+                tasks.append(voice_clone_svc(tts_task, task.lang))
+
+            if not voice_clone_url:
+                tts_task = TwitterTTSTask(
+                    task_id=task.audio.sub_task_id or str(uuid.uuid4()),
+                    tenant_id=task.tenant_id,
+                    read_content=task.slogan,
+                    voice_id=voice_id,
+                    audio_url_input=task.voice_clone_url,
+                    task_type=TaskType.VOICE_CLONE,
+                )
+                slogan = await voice_clone_svc(tts_task, task.lang)
+                voice_clone_url = slogan["audio_url"]
+
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for r in results:
+                    if isinstance(r, Exception):
+                        logging.error(f"voice_clone_svc error: {r}")
+                    elif r:
+                        result.append(r)
         except Exception as e:
             logging.exception("Error in voice clone tasks")
 
         cur_task = await aigc_task_get_by_id(task.task_id)
         sub_task = cur_task.audio
-        if result and len(result) == len(req.x_tts_urls):
+        if result and voice_clone_url and len(result) == len(tasks):
             sub_task.output = result
             sub_task.status = TaskStatus.DONE
             sub_task.done_at = datetime.datetime.now()
+            cur_task.slogan_voice_url = voice_clone_url
             await aigc_task_save(cur_task)
             return
 

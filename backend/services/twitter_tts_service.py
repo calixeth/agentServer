@@ -638,24 +638,26 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
     """
     """
     try:
-        task.tweet_id = extract_tweet_id_from_url(task.twitter_url) or ""
-        if not task.audio_url_input:
-            logger.error("M Audio URL is required for voice cloning")
-            return None
-        # Step 1: Fetch tweet content using twitter_client
-        tweet_summary = await get_tweet_summary(task.tweet_id)
-        if not tweet_summary or 'content' not in tweet_summary:
-            logger.info(f"M Failed to fetch tweet content for {task.tweet_id}")
-            return None
-        tweet_content = tweet_summary['content']
-        if not tweet_content.get('full_text'):
-            logger.info(f"M Failed to fetch full_text for {task.tweet_id}")
-            return None
-        tweet_text = tweet_content['full_text']
-        task.tweet_content = tweet_text
-
+        text = task.read_content
+        if not task.read_content:
+            task.tweet_id = extract_tweet_id_from_url(task.twitter_url) or ""
+            if not task.audio_url_input:
+                logger.error("M Audio URL is required for voice cloning")
+                return None
+            # Step 1: Fetch tweet content using twitter_client
+            tweet_summary = await get_tweet_summary(task.tweet_id)
+            if not tweet_summary or 'content' not in tweet_summary:
+                logger.info(f"M Failed to fetch tweet content for {task.tweet_id}")
+                return None
+            tweet_content = tweet_summary['content']
+            if not tweet_content.get('full_text'):
+                logger.info(f"M Failed to fetch full_text for {task.tweet_id}")
+                return None
+            tweet_text = tweet_content['full_text']
+            task.tweet_content = tweet_text
+            text = tweet_text[:280]
         voice_clone_kwargs = {
-            "text": tweet_text[:280],
+            "text": text,
             "model": "speech-02-hd",  # Voice clone specific model
             "response_format": task.response_format or "mp3",
             "speed": task.speed or 1.0,
@@ -679,13 +681,18 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
 
         logger.info(f"M Successfully processed voice clone task {task.task_id}")
 
-        return TwitterTTSResp(
-            audio_url=audio_url,
-            tweet_content=tweet_text,
-            tweet_id=tweet_content["tweet_id"],
-            tweet_username=task.username,
-            tweet_created_at=tweet_content["created_at"],
-        )
+        if not task.read_content:
+            return TwitterTTSResp(
+                audio_url=audio_url,
+                tweet_content=tweet_text,
+                tweet_id=tweet_content["tweet_id"],
+                tweet_username=task.username,
+                tweet_created_at=tweet_content["created_at"],
+            )
+        else:
+            return TwitterTTSResp(
+                audio_url=audio_url,
+            )
 
 
     except Exception as e:
