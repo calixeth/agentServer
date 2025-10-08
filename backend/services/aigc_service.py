@@ -195,7 +195,7 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
                     task_type=TaskType.VOICE_CLONE,
                 )
                 slogan = await voice_clone_svc(tts_task, task.lang)
-                voice_clone_url = slogan["audio_url"]
+                voice_clone_url = slogan.audio_url
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
                 for r in results:
