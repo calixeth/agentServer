@@ -521,7 +521,7 @@ async def get_predefined_voice_by_id(voice_id: str):
     #     return None
 
 
-async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str="English", style: str = "") -> dict:
+async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str="English") -> dict:
     """
     Generate lyrics from Twitter URL by analyzing user profile and recent tweets
     
@@ -534,7 +534,7 @@ async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lan
     """
     try:
 
-        prompt = LYRICS_PROMPT.format(twitter_url=twitter_url, style=style, language=lang)
+        prompt = LYRICS_PROMPT.format(twitter_url=twitter_url, language=lang)
         text = await gen_text(prompt)
         logger.info(f"generate_lyrics_from_twitter_url LLM resp={text}")
 

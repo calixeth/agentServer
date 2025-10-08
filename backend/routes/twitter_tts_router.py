@@ -379,7 +379,6 @@ async def generate_lyrics_from_twitter(
         result = await twitter_tts_service.generate_lyrics_from_twitter_url(
             twitter_url=request.twitter_url,
             tenant_id=tenant_id,
-            style=request.style,
         )
 
         # Convert to response DTO

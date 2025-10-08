@@ -56,7 +56,7 @@ Based on this content, create **one** integrated short-video script (about 40–
 
 LYRICS_PROMPT = \
 """
-**Analyze the Twitter account {twitter_url} ** — including its bio, followed users, and all previously published posts. Based on the user’s persona, catchphrases, and posting tone, create an **original {style} song lyric**.
+**Analyze the Twitter account {twitter_url} ** — including its bio, followed users, and all previously published posts. Based on the user’s persona, catchphrases, and posting tone, create an **original song lyric**.
 
 **SongTitle Requirements:**
 
