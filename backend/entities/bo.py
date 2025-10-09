@@ -33,14 +33,14 @@ class TwitterBO(BaseModel):
 
 
 class TwitterDTO(BaseModel):
-    name: str = Field(..., description="Display name of the user")
-    screen_name: str = Field(..., description="Unique Twitter handle (username)")
-    profile_banner_url: str = Field(..., description="URL of the profile banner image")
-    profile_image_url_https: str = Field(..., description="URL of the profile image in HTTPS")
-    followers_count: int = Field(..., description="Number of followers")
-    friends_count: int = Field(..., description="Number of accounts the user is following")
-    description: str = Field(..., description="Description of the user")
-    timeline: dict = Field(..., description="timeline posts")
+    name: str = Field(default="", description="Display name of the user")
+    screen_name: str = Field(default="", description="Unique Twitter handle (username)")
+    profile_banner_url: str = Field(default="", description="URL of the profile banner image")
+    profile_image_url_https: str = Field(default="", description="URL of the profile image in HTTPS")
+    followers_count: int = Field(default=0, description="Number of followers")
+    friends_count: int = Field(default=0, description="Number of accounts the user is following")
+    description: str = Field(default="", description="Description of the user")
+    timeline: dict = Field(default_factory=dict, description="timeline posts")
 
 
 class FileBO(BaseModel):
