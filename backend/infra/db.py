@@ -25,6 +25,16 @@ x_oauth_col = db["x_oauth"]
 profiles_col = db["profiles"]
 
 
+async def digital_human_chat_count(digital_human_id: str):
+    await digital_human_col.update_one(
+        {"id": digital_human_id},
+        {
+            "$inc": {"chat_count": 1},
+        },
+        upsert=True,
+    )
+
+
 async def add_points(
         tenant_id: str,
         points: int,

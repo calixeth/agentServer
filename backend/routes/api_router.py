@@ -16,7 +16,8 @@ from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, Digi
     GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
-    get_profile_by_tenant_id, add_points, digital_human_save, profile_save, profiles_col, aigc_task_save
+    get_profile_by_tenant_id, add_points, digital_human_save, profile_save, profiles_col, aigc_task_save, \
+    digital_human_chat_count
 from infra.file import s3_upload_file
 from middleware.auth_middleware import get_optional_current_user
 from services.aigc_service import gen_cover_img_svc, gen_video_svc, aigc_task_publish_by_id, gen_lyrics_svc, \
@@ -310,9 +311,12 @@ async def get_x_user(req: Username1):
             summary="chat")
 async def chat(query: str = Query(..., description="query"),
                conversation_id: str = Query(..., description="conversation_id"),
-               user: Optional[dict] = Depends(get_optional_current_user), ):
+               digital_human_id: str = Query(..., description="digital_human_id"),
+               user: Optional[dict] = Depends(get_optional_current_user),
+               ):
     tenant_id = user.get("tenant_id", "")
     await add_points(tenant_id=tenant_id, points=20, remark="chat")
+    await digital_human_chat_count(digital_human_id)
 
     return StreamingResponse(
         event_generator(conversation_id, query),
