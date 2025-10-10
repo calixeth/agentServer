@@ -11,7 +11,7 @@ from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_
     V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
     V_FIGURE_IMAGE_PROMPT
 from agent.prompt.tts import SLOGAN_PROMPT
-from clients.gen_fal_client import veo3_gen_video_svc_v3, veo3_gen_video_svc_v2
+from clients.gen_fal_client import veo3_gen_video_svc_v2
 from clients.gen_img import gen_gpt_4o_img_svc, gen_text
 from clients.openai_gen_img import gemini_gen_img_svc
 from common.error import raise_error
@@ -27,15 +27,18 @@ from services.twitter_service import twitter_fetch_user_svc
 from services.twitter_tts_service import voice_clone_svc
 
 style_map = {
-    1: "3D cartoon Pixar-style exaggerated character",
-    2: "Gothic anime style",
-    3: "The 3D CGI style emphasizes hyper-realistic details",
-    4: "cartoon-style illustration",
-    5: "Oil painting style",
-    6: "sketched style",
-    8: "cyberpunk style mecha",
-    9: "Simpsons cartoon style",
-    10: "pepe style"
+    1: "Simpsons cartoon style",
+    2: "Pixar 3D cinematic style",
+    3: "Futurama cartoon style",
+    4: "Pixiv-CG realistic style",
+    5: "Japanese 2D anime illustration style",
+    6: "pepe style",
+    7: "cartoon-style illustration",
+    8: "Bored Ape Yacht Club style",
+    9: "Pixel art style",
+    10: "Abstract geometric style",
+    11: "Cyber goth style",
+    12: "Doll-like anime style"
 }
 
 
