@@ -311,12 +311,13 @@ async def get_x_user(req: Username1):
             summary="chat")
 async def chat(query: str = Query(..., description="query"),
                conversation_id: str = Query(..., description="conversation_id"),
-               digital_human_id: str = Query(..., description="digital_human_id"),
+               digital_human_id: str = Query(default="", description="digital_human_id"),
                user: Optional[dict] = Depends(get_optional_current_user),
                ):
     tenant_id = user.get("tenant_id", "")
     await add_points(tenant_id=tenant_id, points=20, remark="chat")
-    await digital_human_chat_count(digital_human_id)
+    if digital_human_id:
+        await digital_human_chat_count(digital_human_id)
 
     return StreamingResponse(
         event_generator(conversation_id, query),

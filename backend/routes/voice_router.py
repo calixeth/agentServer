@@ -5,7 +5,7 @@ import struct
 from fastapi import APIRouter
 from fastapi import WebSocket, WebSocketDisconnect
 
-from infra.db import digital_human_col, digital_human_chat_count
+from infra.db import digital_human_chat_count
 from services.voice_service import RealtimeWebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,8 @@ async def websocket_endpoint(websocket: WebSocket):
         voice = "coral"
     session_id = websocket.query_params.get('conversation_id')
     digital_human_id = websocket.query_params.get('digital_human_id')
+    if not digital_human_id:
+        digital_human_id = ""
 
     logger.info(f"new session: {session_id} voice: {voice}")
     await manager.connect(websocket, session_id, voice)
@@ -29,7 +31,8 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            await digital_human_chat_count(digital_human_id)
+            if digital_human_id:
+                await digital_human_chat_count(digital_human_id)
 
             if message["type"] == "audio":
                 # Convert int16 array to bytes
