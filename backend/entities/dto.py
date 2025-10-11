@@ -424,6 +424,7 @@ class DigitalHuman(TaskAndHuman):
     videos: list[DigitalVideo] = Field(description="videos", default_factory=list)
     songs: dict[str, Any] = Field(description="songs", default_factory=dict)
     audios: list[TwitterTTSResp] = Field(description="audios", default_factory=list)
+    chat_count: int = Field(description="chat_count", default=0)
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
 
