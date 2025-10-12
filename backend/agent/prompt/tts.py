@@ -81,7 +81,7 @@ LYRICS_PROMPT = \
 """
 
 SLOGAN_PROMPT="""\
-Analyze the Twitter account {account} and generate a slogan within 50 characters.
+Analyze the Twitter account {account} and generate a slogan within 120 characters.
 Notes:
 1、The slogan should represent the value proposition and be witty or humorous.
 2、Detect whether the user mainly posts in Chinese or English — output the slogan in that same language. Do not mention which language is used.

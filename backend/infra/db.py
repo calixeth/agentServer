@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from typing import Literal
 
 import motor.motor_asyncio
@@ -65,6 +66,8 @@ async def add_points(
 
 
 async def profile_save(p: Profile):
+    if not p.invitation_code:
+        p.invitation_code = p.tenant_id
     await profiles_col.replace_one({"tenant_id": p.tenant_id}, p.model_dump(), upsert=True)
 
 
@@ -73,7 +76,11 @@ async def get_profile_by_tenant_id(tenant_id: str) -> Profile | None:
         raise_error("tenant_id is required")
     ret = await profiles_col.find_one({"tenant_id": tenant_id})
     if ret:
-        return Profile(**ret)
+        p = Profile(**ret)
+        if not p.invitation_code:
+            p.invitation_code = p.tenant_id
+            await profile_save(p)
+        return p
     else:
         user = await users_col.find_one({"tenant_id": tenant_id})
         p = Profile(

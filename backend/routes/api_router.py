@@ -13,7 +13,8 @@ from common.response import RestResponse
 from config import SETTINGS
 from entities.bo import FileBO, TwitterDTO
 from entities.dto import GenCoverImgReq, AIGCTask, AIGCTaskID, GenVideoReq, DigitalHuman, ID, Username, AIGCPublishReq, \
-    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails
+    GenerateLyricsReq, GenMusicReq, BasicInfoReq, GenXAudioReq, Username1, Profile, DigitalHumanPageReq, PointsDetails, \
+    InvitationCode
 from infra.db import aigc_task_col, aigc_task_get_by_id, aigc_task_count_by_tenant_id, digital_human_col, \
     digital_human_get_by_id, digital_human_get_by_digital_human, aigc_task_delete_by_id, digital_human_col_delete_by_id, \
     get_profile_by_tenant_id, add_points, digital_human_save, profile_save, profiles_col, aigc_task_save, \
@@ -354,3 +355,11 @@ async def profile(user: Optional[dict] = Depends(get_optional_current_user), ):
     tenant_id = user.get("tenant_id", "")
     p = await get_profile_by_tenant_id(tenant_id)
     return RestResponse(data=p.points_details)
+
+
+@router.post("/api/invitation_code",
+             summary="invitation_code",
+             response_model=RestResponse
+             )
+async def invitation_code(req: InvitationCode, user: Optional[dict] = Depends(get_optional_current_user), ):
+    await add_points(tenant_id=req.invitation_code, points=100, remark="invitation_code")

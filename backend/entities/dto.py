@@ -124,6 +124,13 @@ class ID(BaseModel):
     id: str = Field(description="id", default=None)
 
 
+class InvitationCode(BaseModel):
+    """
+    invitation_code
+    """
+    invitation_code: str = Field(description="invitation_code", default=None)
+
+
 class Username(BaseModel):
     """
     username
@@ -447,7 +454,7 @@ class Profile(BaseModel):
     total_points: int = Field(description="Total points", default=0)
     points_details: List[PointsDetails] = Field(description="Points details", default_factory=list)
     follow_digital_human_ids: list[str] = Field(description="Follow digital humans", default_factory=list)
-
+    invitation_code: str = Field(description="Invitation code", default="")
 
 
 class GenerateLyricsResponse(BaseModel):
