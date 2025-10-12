@@ -7,7 +7,7 @@ from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
 from starlette.responses import Response, RedirectResponse
 
-from clients.twitter_client import twitter_fetch_user_tweets
+from clients.x_api_io_client import x_get_user_last_tweets_by_username
 from common.error import raise_error
 from common.response import RestResponse
 from config import SETTINGS
@@ -288,22 +288,16 @@ async def get_x_user(req: Username1):
     user = await twitter_fetch_user_svc(username)
     if not user:
         raise_error(f"User {username} not found")
-    timeline = {}
-    try:
-        ret = await twitter_fetch_user_tweets(user.data.get("rest_id"))
-        if ret.get("result", {}).get("timeline", {}):
-            timeline = ret["result"]["timeline"]
-    except Exception as err:
-        logger.error(err)
+    tweets = await x_get_user_last_tweets_by_username(username)
     return RestResponse(data=TwitterDTO(
-        name=user.data.get("core", {}).get("name"),
-        screen_name=user.data.get("core", {}).get("screen_name"),
-        profile_banner_url=user.data.get("legacy", {}).get("profile_banner_url", ""),
-        description=user.data.get("legacy", {}).get("description"),
+        name=user.name,
+        screen_name=user.username,
+        profile_banner_url=user.avatar_url,
+        description=user.description,
         profile_image_url_https=user.avatar_url,
-        followers_count=user.data.get("legacy", {}).get("followers_count"),
-        friends_count=user.data.get("legacy", {}).get("friends_count"),
-        timeline=timeline
+        followers_count=user.followers,
+        friends_count=user.following,
+        tweets=tweets
     ))
 
 

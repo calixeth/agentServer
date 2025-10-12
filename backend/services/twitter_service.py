@@ -8,10 +8,10 @@ from urllib.parse import urlencode
 
 from aiohttp import ClientSession
 
-from clients.twitter_client import twitter_fetch_user, twitter_fetch_user_tweets
+from clients.x_api_io_client import x_get_user_info_by_username, x_get_user_last_tweets_by_username
 from config import SETTINGS
 from entities.bo import TwitterBO, Country
-from infra.db import twitter_user_col, x_oauth_col, get_profile_by_tenant_id, profile_save, add_points
+from infra.db import x_oauth_col, get_profile_by_tenant_id, profile_save, add_points, xapi_user_col
 
 AUTH_URL = "https://twitter.com/i/oauth2/authorize"
 TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
@@ -19,28 +19,20 @@ USERINFO_URL = "https://api.twitter.com/2/users/me"
 
 
 async def twitter_fetch_user_svc(username: str) -> TwitterBO | None:
-    ret = await twitter_user_col.find_one({"username": username})
+    ret = await xapi_user_col.find_one({"username": username})
     if ret:
         logging.info(f"Cached user {username}")
         return await _fill(TwitterBO(**ret))
 
-    user = None
-    try:
-        user = await twitter_fetch_user(username)
-    except Exception as ex:
-        logging.error(f"Failed to fetch user {username}: {ex}")
+    user = await x_get_user_info_by_username(username)
     if not isinstance(user, dict):
         logging.info(f"User {username} not found")
         return None
 
-    data = user.get("result", {}).get("data", {}).get("user", {}).get("result", {})
-    if not data:
-        return None
-
     bo = TwitterBO(
-        id=data["id"],
+        id=user["id"],
         username=username,
-        data=data,
+        data=user,
     )
     bo = await _fill(bo)
 
@@ -53,8 +45,19 @@ def convert_twitter_avatar_to_400(url: str) -> str:
 
 async def _fill(bo: TwitterBO) -> TwitterBO:
     changed = False
+    if not bo.name:
+        bo.name = bo.data.get("name")
+        changed = True
+
+    if bo.followers == 0:
+        bo.followers = bo.data.get("followers")
+        changed = True
+    if bo.following == 0:
+        bo.following = bo.data.get("following")
+        changed = True
+
     if not bo.avatar_url:
-        bo.avatar_url = bo.data.get("avatar").get("image_url")
+        bo.avatar_url = bo.data.get("profilePicture")
         changed = True
     if not bo.avatar_url_400x400:
         if bo.avatar_url:
@@ -62,13 +65,13 @@ async def _fill(bo: TwitterBO) -> TwitterBO:
             changed = True
 
     if not bo.description:
-        bo.description = bo.data.get("legacy", {}).get("description", "")
+        bo.description = bo.data.get("description")
         changed = True
     if not bo.country:
         text = bo.description
 
         try:
-            ret = await twitter_fetch_user_tweets(bo.data.get("rest_id"))
+            ret = await x_get_user_last_tweets_by_username(bo.username)
             text += json.dumps(ret, ensure_ascii=False)
         except Exception as ex:
             pass
@@ -181,4 +184,4 @@ async def twitter_redirect_url(tenant_id: str) -> str:
 
 
 async def _save(bo: TwitterBO):
-    await twitter_user_col.replace_one({"id": bo.id}, bo.model_dump(), upsert=True)
+    await xapi_user_col.replace_one({"id": bo.id}, bo.model_dump(), upsert=True)

@@ -11,6 +11,7 @@ from entities.dto import PredefinedVoice
 client = motor.motor_asyncio.AsyncIOMotorClient(SETTINGS.MONGO_STR)
 db = client[SETTINGS.MONGO_DB]
 twitter_user_col = db["twitter_user"]
+xapi_user_col = db["xapi_user"]
 file_col = db["file"]
 aigc_task_col = db["aigc_task"]
 users_col = db["users"]  # Collection for user authentication data

@@ -25,11 +25,14 @@ class TwitterBO(BaseModel):
     id: str
     username: str
     data: dict
+    name: str = ""
     avatar_url: str = ""
     avatar_url_400x400: str = ""
     avatar_base64: str = ""
     description: str = ""
     country: Country = None
+    followers: int = 0
+    following: int = 0
 
 
 class TwitterDTO(BaseModel):
@@ -40,7 +43,7 @@ class TwitterDTO(BaseModel):
     followers_count: int = Field(default=0, description="Number of followers")
     friends_count: int = Field(default=0, description="Number of accounts the user is following")
     description: str = Field(default="", description="Description of the user")
-    timeline: dict = Field(default_factory=dict, description="timeline posts")
+    tweets: list = Field(default_factory=list, description="Tweets")
 
 
 class FileBO(BaseModel):
