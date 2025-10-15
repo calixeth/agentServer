@@ -307,6 +307,7 @@ async def get_x_user(req: Username1):
 async def chat(query: str = Query(..., description="query"),
                conversation_id: str = Query(..., description="conversation_id"),
                digital_human_id: str = Query(default="", description="digital_human_id"),
+               twitter_account: str = Query(default="", description="twitter_account"),
                user: Optional[dict] = Depends(get_optional_current_user),
                ):
     tenant_id = user.get("tenant_id", "")
@@ -315,7 +316,7 @@ async def chat(query: str = Query(..., description="query"),
         await digital_human_chat_count(digital_human_id)
 
     return StreamingResponse(
-        event_generator(conversation_id, query),
+        event_generator(conversation_id, query, twitter_account),
         media_type="text/event-stream"
     )
 
