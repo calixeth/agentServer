@@ -81,14 +81,30 @@ LYRICS_PROMPT = \
 """
 
 SLOGAN_PROMPT="""\
-Analyze the Twitter account {account} and generate a slogan within 120 characters.
-Notes:
-1、The slogan should represent the value proposition and be witty or humorous.
-2、Detect whether the user mainly posts in Chinese or English — output the slogan in that same language. Do not mention which language is used.
-3、Do not output any reasoning process — only provide the final result.
+Analyze the Twitter account {account}, including its bio, followed users, and all published posts.
 
-**Output Structure:**
+Based on the user’s persona, tone, and posting content — especially the most recent tweets — generate the following JSON output:
+
 {{
-"slogan":"",
+  "slogan": "",
+  "description": ""
 }}
+
+**Slogon Requirements**
+- Within 30 English words.
+- Must be in English, even if the account mainly posts in another language.  
+- Represent the user’s Web3 value proposition, mindset, or humor.  
+- Should be sharp, ironic, or catchy — something that could go viral as a pinned tweet.  
+- Avoid generic motivational or brand slogans.  
+- Output only plain text (no reasoning, no labels).
+
+**Description Requirements**
+- Within 120 English words.  
+- Must reflect the account’s true personality and the spirit of their recent tweets.  
+- Capture the tone, rhythm, and cultural flavor of Web3 — whether it’s degen chaos, builder grind, alpha sharing, or meme-driven insight.  
+- Include clear Web3 elements: crypto, DeFi, NFTs, airdrops, memes, alpha, community energy, or on-chain movement.  
+- Write in a human, narrative, expressive voice — like a short profile blurb, not a technical summary.  
+- Can sound edgy, visionary, or irreverent depending on the persona.  
+- Avoid repeating the slogan.  
+- Output only the text (no reasoning, no labels).
 """

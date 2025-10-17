@@ -288,6 +288,8 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
                 data = json.loads(json_str)
                 if "slogan" in data:
                     task.slogan = data["slogan"]
+                if "description" in data:
+                    task.slogan_description = data["description"]
         except Exception as e:
             logging.error(f"M slogan gen error: {e}", exc_info=True)
 

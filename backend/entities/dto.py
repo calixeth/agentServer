@@ -87,6 +87,7 @@ class TaskAndHuman(BaseModel):
     twitter_avatar_url: str = Field(description="twitter_avatar_url", default="")
     gender: Gender = Field(description="gender", default=Gender.MALE)
     slogan: str = Field(description="slogan", default="")
+    slogan_description: str = Field(description="slogan description", default="")
     slogan_voice_url: str = Field(description="slogan_voice_url", default="")
     voice_clone_url: str = Field(description="voice_clone_url", default="")
     lang: Language = Field(description="language", default=Language.ENGLISH)
