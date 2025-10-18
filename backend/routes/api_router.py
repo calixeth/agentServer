@@ -363,4 +363,13 @@ async def profile(user: Optional[dict] = Depends(get_optional_current_user), ):
              response_model=RestResponse
              )
 async def invitation_code(req: InvitationCode, user: Optional[dict] = Depends(get_optional_current_user), ):
+    tenant_id = user.get("tenant_id", "")
+    p = await get_profile_by_tenant_id(tenant_id)
+    if p.from_invitation_code:
+        return RestResponse(data="expired")
+
+    p.from_invitation_code = req.invitation_code
+    await profile_save(p)
+
     await add_points(tenant_id=req.invitation_code, points=100, remark="invitation_code")
+    return RestResponse(data="ok")

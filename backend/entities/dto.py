@@ -456,6 +456,7 @@ class Profile(BaseModel):
     points_details: List[PointsDetails] = Field(description="Points details", default_factory=list)
     follow_digital_human_ids: list[str] = Field(description="Follow digital humans", default_factory=list)
     invitation_code: str = Field(description="Invitation code", default="")
+    from_invitation_code: str = Field(description="From invitation code", default="")
 
 
 class GenerateLyricsResponse(BaseModel):
