@@ -278,20 +278,25 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
         )
 
     if not task.slogan:
-        try:
-            logging.info(f"gen slogan {username}")
-            text = await gen_text(SLOGAN_PROMPT.format(account=username))
-            pattern = re.compile(r'\{.*?\}', re.DOTALL)
-            match = pattern.search(text)
-            if match:
-                json_str = match.group(0)
-                data = json.loads(json_str)
-                if "slogan" in data:
-                    task.slogan = data["slogan"]
-                if "description" in data:
-                    task.slogan_description = data["description"]
-        except Exception as e:
-            logging.error(f"M slogan gen error: {e}", exc_info=True)
+        slogan_retry = 5
+        text = ""
+        while slogan_retry > 0:
+            try:
+                logging.info(f"gen slogan {username}")
+                text = await gen_text(SLOGAN_PROMPT.format(account=username))
+                pattern = re.compile(r'\{.*?\}', re.DOTALL)
+                match = pattern.search(text)
+                if match:
+                    json_str = match.group(0)
+                    data = json.loads(json_str)
+                    if "slogan" in data:
+                        task.slogan = data["slogan"]
+                    if "description" in data:
+                        task.slogan_description = data["description"]
+                    break
+            except Exception as e:
+                slogan_retry -= 1
+                logging.error(f"M slogan gen text {text} error: {e} ", exc_info=True)
 
     await aigc_task_save(task)
 
