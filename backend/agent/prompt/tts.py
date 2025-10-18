@@ -66,7 +66,7 @@ LYRICS_PROMPT = \
 
 **Lyrics Requirements (internalized understanding, no explanation in output):**
 
-1. Use short song length,Final length:300 characters max.
+1. Use short song length, Within 100 English words.
 2. The beginning of the lyrics must clearly state **who I am and what I do** (slogan). The overall narrative should be based on the user’s past posts, such as buying a certain token or FUD-ing another token.
 3. **Output only the lyrics text.** Keep each stanza between 1–5 lines to meet the character requirement.
 4. Automatically extract and expand **4–5 Web3 jargon terms** from the reference content. After internal filtering, keep only words that fit the theme/mood/rhythm/narrative and are easy to sing/rap. Examples include: *holder, FUD, rug pull, DeFi, NFT, whale, gas, TGE, yield farming, to the moon, WAGMI, LFG, alpha, airdrop, staking, liquidity, slippage, APY, TVL, L2, rekt*, etc.
