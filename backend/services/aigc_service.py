@@ -7,19 +7,18 @@ import uuid
 
 from fastapi import BackgroundTasks
 
-from agent.prompt.aigc import V_DEFAULT_PROMPT, FIRST_FRAME_IMG_PROMPT, V_THINK_PROMPT, V_DANCE_VIDEO_PROMPT, \
-    V_SING_VIDEO_PROMPT, V_SPEECH_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_TURN_PROMPT, \
-    V_FIGURE_IMAGE_PROMPT
+from agent.prompt.aigc import FIRST_FRAME_IMG_PROMPT, V_DANCE_IMAGE_PROMPT, V_SING_IMAGE_PROMPT, V_FIGURE_IMAGE_PROMPT, \
+    V_DANCE_VIDEO_PROMPT, V_TURN_PROMPT, V_SPEECH_PROMPT, V_THINK_PROMPT, V_SING_VIDEO_PROMPT, V_DEFAULT_PROMPT
 from agent.prompt.tts import SLOGAN_PROMPT
 from clients.gen_fal_client import veo3_gen_video_svc_v2
 from clients.gen_img import gen_gpt_4o_img_svc, gen_text
 from clients.openai_gen_img import gemini_gen_img_svc
 from common.error import raise_error
 from config import SETTINGS
-from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, VideoKeyType, DigitalHuman, \
+from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
     GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
-    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman
+    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman, VideoKeyType
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_digital_human
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
@@ -277,31 +276,32 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
             created_at=datetime.datetime.now()
         )
 
-    if not task.slogan:
-        slogan_retry = 5
-        text = ""
-        while slogan_retry > 0:
-            try:
-                logging.info(f"gen slogan {username}")
-                text = await gen_text(SLOGAN_PROMPT.format(account=username))
-                pattern = re.compile(r'\{.*?\}', re.DOTALL)
-                match = pattern.search(text)
-                if match:
-                    json_str = match.group(0)
-                    data = json.loads(json_str)
-                    if "slogan" in data:
-                        task.slogan = data["slogan"]
-                    if "description" in data:
-                        task.slogan_description = data["description"]
-                    break
-            except Exception as e:
-                slogan_retry -= 1
-                logging.error(f"M slogan gen text {text} error: {e} ", exc_info=True)
-
     await aigc_task_save(task)
 
     async def _task_gen_cover_img_svc():
         logging.info(f"M begin")
+
+        if not task.slogan:
+            slogan_retry = 5
+            text = ""
+            while slogan_retry > 0:
+                try:
+                    logging.info(f"gen slogan {username}")
+                    text = await gen_text(SLOGAN_PROMPT.format(account=username))
+                    pattern = re.compile(r'\{.*?\}', re.DOTALL)
+                    match = pattern.search(text)
+                    if match:
+                        json_str = match.group(0)
+                        data = json.loads(json_str)
+                        if "slogan" in data:
+                            task.slogan = data["slogan"]
+                        if "description" in data:
+                            task.slogan_description = data["description"]
+                        break
+                except Exception as e:
+                    slogan_retry -= 1
+                    logging.error(f"M slogan gen text {text} error: {e} ", exc_info=True)
+
         base_img = req.img_url
         if not base_img:
             base_img = twitter_bo.avatar_url_400x400
@@ -400,68 +400,68 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
         )
 
     await aigc_task_save(org_task)
+
+    async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
+        logging.info(f"M _task_video_svc req: {req.model_dump_json()}")
+
+        if VideoKeyType.DANCE == req.key:
+            prompt = V_DANCE_VIDEO_PROMPT
+        # elif VideoKeyType.GOGO == req.key:
+        #     prompt = V_GOGO_PROMPT
+        elif VideoKeyType.TURN == req.key:
+            prompt = V_TURN_PROMPT
+        # elif VideoKeyType.ANGRY == req.key:
+        #     prompt = V_ANGRY_PROMPT
+        # elif VideoKeyType.SAYING == req.key:
+        #     prompt = V_SAYING_PROMPT
+        elif VideoKeyType.SPEECH == req.key:
+            prompt = V_SPEECH_PROMPT
+        elif VideoKeyType.THINK == req.key:
+            prompt = V_THINK_PROMPT
+        elif VideoKeyType.SING == req.key:
+            prompt = V_SING_VIDEO_PROMPT
+        elif VideoKeyType.FIGURE == req.key:
+            prompt = V_FIGURE_IMAGE_PROMPT
+        else:
+            prompt = V_DEFAULT_PROMPT
+
+        if VideoKeyType.DANCE == req.key:
+            first_frame_img_url = task.cover.output.dance_first_frame_img_url
+        elif VideoKeyType.SING == req.key:
+            first_frame_img_url = task.cover.output.sing_first_frame_img_url
+        elif VideoKeyType.FIGURE == req.key:
+            first_frame_img_url = task.cover.output.figure_first_frame_img_url
+        else:
+            first_frame_img_url = task.cover.output.first_frame_img_url
+
+        if VideoKeyType.DANCE == req.key:
+            data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+        elif VideoKeyType.SING == req.key:
+            data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+        elif VideoKeyType.FIGURE == req.key:
+            data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+        else:
+            data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
+
+        cur_task = await aigc_task_get_by_id(task.task_id)
+        if data:
+            for v in cur_task.videos:
+                if v.input.key == req.key:
+                    v.output = data
+                    v.status = TaskStatus.DONE
+                    v.done_at = datetime.datetime.now()
+                    break
+            await aigc_task_save(cur_task)
+        else:
+            for v in cur_task.videos:
+                if v.input.key == req.key:
+                    v.status = TaskStatus.FAILED
+                    v.done_at = datetime.datetime.now()
+                    break
+            await aigc_task_save(cur_task)
+
     background.add_task(_task_video_svc, org_task, req)
     return org_task
-
-
-async def _task_video_svc(task: AIGCTask, req: GenVideoReq):
-    logging.info(f"M _task_video_svc req: {req.model_dump_json()}")
-
-    if VideoKeyType.DANCE == req.key:
-        prompt = V_DANCE_VIDEO_PROMPT
-    # elif VideoKeyType.GOGO == req.key:
-    #     prompt = V_GOGO_PROMPT
-    elif VideoKeyType.TURN == req.key:
-        prompt = V_TURN_PROMPT
-    # elif VideoKeyType.ANGRY == req.key:
-    #     prompt = V_ANGRY_PROMPT
-    # elif VideoKeyType.SAYING == req.key:
-    #     prompt = V_SAYING_PROMPT
-    elif VideoKeyType.SPEECH == req.key:
-        prompt = V_SPEECH_PROMPT
-    elif VideoKeyType.THINK == req.key:
-        prompt = V_THINK_PROMPT
-    elif VideoKeyType.SING == req.key:
-        prompt = V_SING_VIDEO_PROMPT
-    elif VideoKeyType.FIGURE == req.key:
-        prompt = V_FIGURE_IMAGE_PROMPT
-    else:
-        prompt = V_DEFAULT_PROMPT
-
-    if VideoKeyType.DANCE == req.key:
-        first_frame_img_url = task.cover.output.dance_first_frame_img_url
-    elif VideoKeyType.SING == req.key:
-        first_frame_img_url = task.cover.output.sing_first_frame_img_url
-    elif VideoKeyType.FIGURE == req.key:
-        first_frame_img_url = task.cover.output.figure_first_frame_img_url
-    else:
-        first_frame_img_url = task.cover.output.first_frame_img_url
-
-    if VideoKeyType.DANCE == req.key:
-        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
-    elif VideoKeyType.SING == req.key:
-        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
-    elif VideoKeyType.FIGURE == req.key:
-        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
-    else:
-        data = await veo3_gen_video_svc_v2(first_frame_img_url, prompt)
-
-    cur_task = await aigc_task_get_by_id(task.task_id)
-    if data:
-        for v in cur_task.videos:
-            if v.input.key == req.key:
-                v.output = data
-                v.status = TaskStatus.DONE
-                v.done_at = datetime.datetime.now()
-                break
-        await aigc_task_save(cur_task)
-    else:
-        for v in cur_task.videos:
-            if v.input.key == req.key:
-                v.status = TaskStatus.FAILED
-                v.done_at = datetime.datetime.now()
-                break
-        await aigc_task_save(cur_task)
 
 
 async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, background: BackgroundTasks) -> DigitalHuman:
