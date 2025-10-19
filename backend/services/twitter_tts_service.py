@@ -7,7 +7,6 @@ from typing import Optional
 from agent.prompt.tts import LYRICS_PROMPT
 from clients.gen_img import gen_text
 from clients.tts_client import text_to_speech_svc
-from clients.twitter_client import get_tweet_summary
 from clients.x_api_io_client import x_get_tweets_by_id
 from config import SETTINGS
 from entities.bo import TwitterTTSRequestBO, TwitterTTSResp
