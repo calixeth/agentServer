@@ -45,3 +45,21 @@ async def x_get_user_last_tweets_by_username(username: str):
     except Exception as ex:
         logging.error("Failed x_get_user_last_tweets_by_username", exc_info=True)
     return None
+
+
+async def x_get_tweets_by_id(id: str):
+    url = f"{host}/twitter/tweets?tweet_ids={id}"
+    logging.info(f"Fetching {url}")
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                response.raise_for_status()
+                if response.status == 200:
+                    res = await response.json()
+                    if "status" in res and "success" == res["status"]:
+                        logging.info(f"fetched {json.dumps(res["tweets"][0], ensure_ascii=False)}")
+                        return res["tweets"][0]
+    except Exception as ex:
+        logging.error("Failed x_get_user_last_tweets_by_username", exc_info=True)
+    return None

@@ -4,10 +4,11 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from agent.prompt.tts import TTS_PROMPT, LYRICS_PROMPT
+from agent.prompt.tts import LYRICS_PROMPT
 from clients.gen_img import gen_text
-from clients.tts_client import text_to_speech_svc, call_model
+from clients.tts_client import text_to_speech_svc
 from clients.twitter_client import get_tweet_summary
+from clients.x_api_io_client import x_get_tweets_by_id
 from config import SETTINGS
 from entities.bo import TwitterTTSRequestBO, TwitterTTSResp
 from entities.dto import TwitterTTSTask, TwitterTTSTaskListResponse
@@ -521,7 +522,7 @@ async def get_predefined_voice_by_id(voice_id: str):
     #     return None
 
 
-async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str="English") -> dict:
+async def generate_lyrics_from_twitter_url(twitter_url: str, tenant_id: str, lang: str = "English") -> dict:
     """
     Generate lyrics from Twitter URL by analyzing user profile and recent tweets
     
@@ -645,15 +646,11 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
                 logger.error("M Audio URL is required for voice cloning")
                 return None
             # Step 1: Fetch tweet content using twitter_client
-            tweet_summary = await get_tweet_summary(task.tweet_id)
-            if not tweet_summary or 'content' not in tweet_summary:
-                logger.info(f"M Failed to fetch tweet content for {task.tweet_id}")
+            tweet = await x_get_tweets_by_id(task.tweet_id)
+            if not tweet:
+                logger.error(f"Tweet not found for voice cloning {task.tweet_id}")
                 return None
-            tweet_content = tweet_summary['content']
-            if not tweet_content.get('full_text'):
-                logger.info(f"M Failed to fetch full_text for {task.tweet_id}")
-                return None
-            tweet_text = tweet_content['full_text']
+            tweet_text = tweet['text']
             task.tweet_content = tweet_text
             text = tweet_text[:280]
         voice_clone_kwargs = {
@@ -685,9 +682,9 @@ async def voice_clone_svc(task: TwitterTTSTask, lang) -> TwitterTTSResp | None:
             return TwitterTTSResp(
                 audio_url=audio_url,
                 tweet_content=tweet_text,
-                tweet_id=tweet_content["tweet_id"],
+                tweet_id=tweet["id"],
                 tweet_username=task.username,
-                tweet_created_at=tweet_content["created_at"],
+                tweet_created_at=tweet["createdAt"],
             )
         else:
             return TwitterTTSResp(
