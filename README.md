@@ -31,7 +31,7 @@ Digital companions for learning or mental wellness
 
 ## 📸 Demo
 
-[![Watch the video](https://deepweb3.s3.ap-southeast-2.amazonaws.com/2025-07-22_235229_152.png)](https://deepweb3.s3.ap-southeast-2.amazonaws.com/5b9ec5ae407468574c9eef109f7b540c.mp4)
+[![Watch the video](https://web3ai.s3.ap-southeast-2.amazonaws.com/20251020222650_5_4.png)](https://deepweb3.s3.ap-southeast-2.amazonaws.com/5b9ec5ae407468574c9eef109f7b540c.mp4)
 
 
 ## 🚀 Quickstart
