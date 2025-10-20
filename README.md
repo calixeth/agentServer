@@ -1,4 +1,4 @@
-# agentServer
+# KOLI
 
 An open-source AI Digital Human framework that enables developers to create lifelike, real-time virtual agents powered by multimodal AI. This project supports customized voice, facial expressions, and gestures tailored to user profiles—offering personalized and engaging human-AI interaction.
 
