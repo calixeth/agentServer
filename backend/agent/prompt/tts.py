@@ -83,14 +83,9 @@ LYRICS_PROMPT = \
 SLOGAN_PROMPT="""\
 Analyze the Twitter account {account}, including its bio, followed users, and all published posts.
 
-Based on the user’s persona, tone, and posting content — especially the most recent tweets — generate the following JSON output:
+Based on the user’s persona, tone, and posting content — especially the most recent tweets
 
-{{
-  "slogan": "",
-  "description": ""
-}}
-
-**Slogon Requirements**
+**slogan Requirements**
 - Within 30 English words.
 - Must be in English, even if the account mainly posts in another language.  
 - Represent the user’s Web3 value proposition, mindset, or humor.  
@@ -98,7 +93,7 @@ Based on the user’s persona, tone, and posting content — especially the most
 - Avoid generic motivational or brand slogans.  
 - Output only plain text (no reasoning, no labels).
 
-**Description Requirements**
+**description Requirements**
 - Within 120 English words.  
 - Must reflect the account’s true personality and the spirit of their recent tweets.  
 - Capture the tone, rhythm, and cultural flavor of Web3 — whether it’s degen chaos, builder grind, alpha sharing, or meme-driven insight.  
@@ -107,4 +102,18 @@ Based on the user’s persona, tone, and posting content — especially the most
 - Can sound edgy, visionary, or irreverent depending on the persona.  
 - Avoid repeating the slogan.  
 - Output only the text (no reasoning, no labels).
+
+You must respond with ONLY valid JSON in the exact format specified below. Do not include any text after the JSON.
+
+Required JSON structure:
+{{
+  "slogan": "",
+  "description": ""
+}}
+
+Example of correct output format:
+{{
+  "slogan": "Your creative slogan here",
+  "description": "Your detailed description here"
+}}
 """
