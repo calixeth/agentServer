@@ -282,7 +282,7 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
         logging.info(f"M begin")
 
         if not task.slogan:
-            slogan_retry = 5
+            slogan_retry = 10
             text = ""
             while slogan_retry > 0:
                 try:
