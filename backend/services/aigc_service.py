@@ -18,7 +18,7 @@ from config import SETTINGS
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
     GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
-    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman, VideoKeyType
+    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman, VideoKeyType, CloneXAudioReq
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_digital_human
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
@@ -224,6 +224,40 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
     background.add_task(_bg_x_audio_task)
 
     return task
+
+
+async def clone_twitter_audio_svc(req: CloneXAudioReq, background: BackgroundTasks):
+    async def _bg_x_clone_twitter_audio_task():
+        if not req.username or not req.text:
+            return
+        digital_human: DigitalHuman = await digital_human_get_by_digital_human(req.username)
+        if not digital_human:
+            return
+
+        voice_id = "Abbess"
+        voice_clone_url = digital_human.slogan_voice_url
+        try:
+            tts_task = TwitterTTSTask(
+                task_id=str(uuid.uuid4()),
+                tenant_id=digital_human.from_tenant_id,
+                read_content=req.text,
+                voice_id=voice_id,
+                audio_url_input=voice_clone_url,
+                task_type=TaskType.VOICE_CLONE,
+            )
+            result = await voice_clone_svc(tts_task, "")
+            if result and voice_clone_url:
+                digital_human.audios.append(result)
+                await digital_human_save(digital_human)
+
+                cur_task = await aigc_task_get_by_id(digital_human.from_task_id)
+                if cur_task:
+                    cur_task.audio.output.append(result)
+                    await aigc_task_save(cur_task)
+        except Exception as e:
+            logging.exception("Error in clone_twitter_audio_svc tasks")
+
+    background.add_task(_bg_x_clone_twitter_audio_task)
 
 
 async def save_basic_info(req: BasicInfoReq, background: BackgroundTasks) -> AIGCTask:

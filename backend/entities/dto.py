@@ -118,6 +118,13 @@ class GenXAudioReq(AIGCTaskID):
     x_tts_urls: list[str] = Field(description="x tts url", default_factory=list)
 
 
+class CloneXAudioReq(BaseModel):
+    """
+    """
+    username: str = Field(description="username", default="")
+    text: str = Field(description="text", default="")
+
+
 class ID(BaseModel):
     """
     id

@@ -29,6 +29,7 @@ class AuthConfig:
         "/api/twitter-tts/tasks",
         "/api/callback",
         "/api/digital_human/get_by_digital_name",
+        "/innerapi/clone_twitter_audio"
     ]
 
 
