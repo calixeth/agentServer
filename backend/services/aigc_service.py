@@ -18,7 +18,7 @@ from config import SETTINGS
 from entities.dto import GenCoverImgReq, AIGCTask, Cover, TaskStatus, GenVideoReq, Video, DigitalHuman, \
     DigitalVideo, GenCoverResp, AIGCPublishReq, Lyrics, GenerateLyricsResponse, \
     GenerateLyricsResp, GenerateLyricsReq, GenMusicReq, Music, GenerateMusicResponse, GenerateMusicResp, BasicInfoReq, \
-    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman, VideoKeyType, CloneXAudioReq
+    GenXAudioReq, Audio, TwitterTTSTask, TaskType, TaskAndHuman, VideoKeyType, CloneXAudioReq, Fee
 from infra.db import aigc_task_get_by_id, aigc_task_save, digital_human_save, digital_human_get_by_digital_human
 from services import twitter_tts_service
 from services.resource_usage_limit import check_limit_and_record
@@ -80,6 +80,12 @@ async def gen_lyrics_svc(req: GenerateLyricsReq, background: BackgroundTasks) ->
             )
             cur_task.lyrics.status = TaskStatus.DONE
             cur_task.lyrics.done_at = datetime.datetime.now()
+
+            fee = Fee.total_fee([
+                Fee.llm_fee(),
+            ])
+            cur_task.lyrics.fee.append(fee)
+
             await aigc_task_save(cur_task)
             return
 
@@ -138,6 +144,12 @@ async def gen_music_svc(req: GenMusicReq, background: BackgroundTasks) -> AIGCTa
             cur_task.music.output = GenerateMusicResp(**result)
             cur_task.music.status = TaskStatus.DONE
             cur_task.music.done_at = datetime.datetime.now()
+
+            fee = Fee.total_fee([
+                Fee.music_fee(),
+            ])
+            cur_task.music.fee.append(fee)
+
             await aigc_task_save(cur_task)
             return
 
@@ -173,6 +185,7 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
         result = []
         tasks = []
         voice_clone_url = task.slogan_voice_url
+        fee_items = []
         try:
 
             for twitter_url in req.x_tts_urls:
@@ -186,6 +199,7 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
                     task_type=TaskType.VOICE_CLONE,
                 )
                 tasks.append(voice_clone_svc(tts_task, task.lang))
+                fee_items.append(Fee.clone_fee())
 
             if not voice_clone_url:
                 tts_task = TwitterTTSTask(
@@ -215,6 +229,10 @@ async def gen_twitter_audio_svc(req: GenXAudioReq, background: BackgroundTasks) 
             sub_task.status = TaskStatus.DONE
             sub_task.done_at = datetime.datetime.now()
             cur_task.slogan_voice_url = voice_clone_url
+
+            fee = Fee.total_fee(fee_items)
+            sub_task.fee.append(fee)
+
             await aigc_task_save(cur_task)
             return
 
@@ -394,8 +412,18 @@ async def gen_cover_img_svc(req: GenCoverImgReq, background: BackgroundTasks) ->
                 sing_first_frame_img_url=sing_url,
                 figure_first_frame_img_url=figure_url,
             )
+
+            fee = Fee.total_fee([
+                Fee.img_fee(),
+                Fee.img_fee(),
+                Fee.img_fee(),
+                Fee.img_fee(),
+                Fee.llm_fee(),
+            ])
+
             cur_task.cover.status = TaskStatus.DONE
             cur_task.cover.done_at = datetime.datetime.now()
+            cur_task.cover.fee.append(fee)
             logging.info(f"M cur_cover_img_svc: {cur_task.cover.output.model_dump_json()}")
             await aigc_task_save(cur_task)
             return
@@ -484,7 +512,12 @@ async def gen_video_svc(req: GenVideoReq, background: BackgroundTasks) -> AIGCTa
                     v.output = data
                     v.status = TaskStatus.DONE
                     v.done_at = datetime.datetime.now()
+                    fee = Fee.total_fee([
+                        Fee.video_fee(),
+                    ])
+                    v.fee.append(fee)
                     break
+
             await aigc_task_save(cur_task)
         else:
             for v in cur_task.videos:
@@ -517,9 +550,33 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
     if update:
         id = org.id
         created_at = org.created_at
+
+        sum = 0.0
+        for fee in task.cover.fee:
+            sum += fee.amount
+        for fee in task.lyrics.fee:
+            sum += fee.amount
+        for fee in task.music.fee:
+            sum += fee.amount
+        for fee in task.audio.fee:
+            sum += fee.amount
+        for video in task.videos:
+            for fee in video.fee:
+                sum += fee.amount
+        fee = org.fee
+        for fee in fee:
+            sum -= fee.amount
+        fee.append(Fee.total_fee([
+            Fee(
+                name="item",
+                amount=sum,
+                items=[],
+            ),
+        ]))
     else:
         id = str(uuid.uuid4())
         created_at = datetime.datetime.now()
+        fee = []
 
     videos: list[DigitalVideo] = []
     for v in task.videos:
@@ -560,6 +617,7 @@ async def aigc_task_publish_by_id(req: AIGCPublishReq, user_dict: dict, backgrou
             "music_response_format": task.music.output.response_format,
             "music_speed": task.music.output.speed,
         },
+        fee=fee,
         audios=audios,
         **basic.model_dump()
     )

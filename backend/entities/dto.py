@@ -9,6 +9,64 @@ from common.error import raise_error
 from entities.bo import Language, TwitterTTSResp
 
 
+class Fee(BaseModel):
+    name: str
+    amount: float = 0.0
+    currency: str = "USD"
+    items: list["Fee"] = Field(description="items", default_factory=list)
+
+    @staticmethod
+    def img_fee() -> "Fee":
+        return Fee(
+            name="img",
+            amount=0.4,
+            items=[],
+        )
+
+    @staticmethod
+    def llm_fee() -> "Fee":
+        return Fee(
+            name="llm",
+            amount=0.002,
+            items=[],
+        )
+
+    @staticmethod
+    def music_fee() -> "Fee":
+        return Fee(
+            name="music",
+            amount=1,
+            items=[],
+        )
+
+    @staticmethod
+    def video_fee() -> "Fee":
+        return Fee(
+            name="video",
+            amount=3,
+            items=[],
+        )
+
+    @staticmethod
+    def clone_fee() -> "Fee":
+        return Fee(
+            name="clone",
+            amount=0.5,
+            items=[],
+        )
+
+    @staticmethod
+    def total_fee(items: list["Fee"]) -> "Fee":
+        return Fee(
+            name="total",
+            amount=sum(item.total() for item in items),
+            items=items,
+        )
+
+    def total(self) -> float:
+        return self.amount + sum(item.total() for item in self.items)
+
+
 class TaskStatus(StrEnum):
     IN_PROGRESS = "in_progress"
     DONE = "done"
@@ -55,6 +113,7 @@ class SubTask(BaseModel):
     created_at: datetime.datetime = Field(description="created_at")
     done_at: datetime.datetime | None = Field(description="done_at", default=None)
     history: list[dict[str, Any]] = Field(description="history", default_factory=list)
+    fee: list[Fee] = Field(description="fee", default_factory=list)
 
     def regenerate(self) -> None:
         if self.status == TaskStatus.DONE:
@@ -440,6 +499,7 @@ class DigitalHuman(TaskAndHuman):
     songs: dict[str, Any] = Field(description="songs", default_factory=dict)
     audios: list[TwitterTTSResp] = Field(description="audios", default_factory=list)
     chat_count: int = Field(description="chat_count", default=0)
+    fee: list[Fee] = Field(description="fee", default_factory=list)
     created_at: datetime.datetime = Field(description="created_at")
     updated_at: datetime.datetime = Field(description="updated_at")
 
